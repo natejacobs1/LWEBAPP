@@ -15,6 +15,7 @@ import {
   LayerOpacity,
   RiskLevel,
   BasemapId,
+  GisTab,
 } from './types/gis';
 import {
   GEOJSON_URLS,
@@ -22,6 +23,7 @@ import {
   ALLOWED_DISTRICTS,
   standardizeDistrictName,
 } from './utils/gis';
+import { sampleSusceptibilityAtCoord, SusceptibilitySampleResult } from './utils/rasterSampler';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MapContainer } from './components/MapContainer';
@@ -69,10 +71,12 @@ export default function App() {
   const [minSusceptibility, setMinSusceptibility] = useState<number>(50);
   const [maxDistanceToRoad, setMaxDistanceToRoad] = useState<number>(1000);
 
-  // UI Navigation & Inspector State
+  // UI Navigation, Inspector, & Raster Sampling State
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'layers' | 'inspector' | 'analytics' | 'points'>('layers');
+  const [activeTab, setActiveTab] = useState<GisTab>('layers');
   const [selectedPoint, setSelectedPoint] = useState<GeoJsonFeature<LandslideProperties, GeoJSON.Point> | null>(null);
+  const [susceptibilitySample, setSusceptibilitySample] = useState<SusceptibilitySampleResult | null>(null);
+  const [isSamplingRaster, setIsSamplingRaster] = useState<boolean>(false);
 
   // Fetch all 3 GeoJSON datasets at runtime
   const fetchData = useCallback(async () => {
@@ -201,12 +205,12 @@ export default function App() {
     });
   }, [landslidesData, selectedRiskFilters, selectedDistrict, minSusceptibility, maxDistanceToRoad]);
 
-  // Point selection handler (when clicked on map or directory)
+  // Point selection handler (when clicked on map or inspector)
   const handleSelectPoint = useCallback((pt: GeoJsonFeature<LandslideProperties, GeoJSON.Point>) => {
     setSelectedPoint(pt);
     setActiveTab('inspector');
-    if (!sidebarOpen) setSidebarOpen(true);
-  }, [sidebarOpen]);
+    setSidebarOpen(true);
+  }, []);
 
   // Zoom to point handler
   const handleZoomToPoint = useCallback((lat: number, lng: number) => {
@@ -238,6 +242,31 @@ export default function App() {
       [layer]: val,
     }));
   }, []);
+
+  // Map raster susceptibility query handler (when clicked on empty map space or district)
+  const handleMapRasterQuery = useCallback(
+    async (lat: number, lng: number) => {
+      setIsSamplingRaster(true);
+      setActiveTab('susceptibility');
+      if (!sidebarOpen) setSidebarOpen(true);
+
+      try {
+        const result = await sampleSusceptibilityAtCoord(lat, lng);
+        setSusceptibilitySample(result);
+      } catch (err) {
+        console.error('Failed to sample raster:', err);
+        setSusceptibilitySample({
+          status: 'nodata',
+          message: 'No susceptibility data available at this location.',
+          latitude: lat,
+          longitude: lng,
+        });
+      } finally {
+        setIsSamplingRaster(false);
+      }
+    },
+    [sidebarOpen]
+  );
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
@@ -322,6 +351,8 @@ export default function App() {
           filteredLandslideFeatures={filteredLandslideFeatures}
           districtsCount={districtsData?.features.length || 0}
           roadsCount={roadsData?.features.length || 0}
+          susceptibilitySample={susceptibilitySample}
+          isSamplingRaster={isSamplingRaster}
         />
 
         {/* Map Container Viewport */}
@@ -329,6 +360,7 @@ export default function App() {
           <MapContainer
             districtsData={districtsData}
             roadsData={roadsData}
+            allLandslides={landslidesData?.features || []}
             filteredLandslides={filteredLandslideFeatures}
             selectedBasemap={selectedBasemap}
             layerVisibility={layerVisibility}
@@ -339,6 +371,9 @@ export default function App() {
             resetViewTrigger={resetViewTrigger}
             zoomTarget={zoomTarget}
             selectedDistrict={selectedDistrict}
+            onMapRasterQuery={handleMapRasterQuery}
+            susceptibilitySample={susceptibilitySample}
+            activeTab={activeTab}
           />
 
           {/* Floating Collapsible GIS Legend */}

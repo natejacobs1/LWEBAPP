@@ -1,6 +1,6 @@
 import React from 'react';
-import { Layers, MapPin, Navigation, BarChart3, RotateCcw, Compass, Map as MapIcon } from 'lucide-react';
-import { BasemapId, BasemapOption } from '../types/gis';
+import { Layers, MapPin, BarChart3, RotateCcw, Compass, Map as MapIcon, Crosshair } from 'lucide-react';
+import { BasemapId, GisTab } from '../types/gis';
 import { BASEMAPS } from '../utils/gis';
 
 interface HeaderProps {
@@ -10,8 +10,8 @@ interface HeaderProps {
   selectedBasemap: BasemapId;
   onSelectBasemap: (id: BasemapId) => void;
   onResetView: () => void;
-  activeTab: 'layers' | 'inspector' | 'analytics' | 'points';
-  setActiveTab: (tab: 'layers' | 'inspector' | 'analytics' | 'points') => void;
+  activeTab: GisTab;
+  setActiveTab: (tab: GisTab) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   isLoading: boolean;
@@ -127,18 +127,18 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={() => {
-            setActiveTab('points');
+            setActiveTab('susceptibility');
             if (!sidebarOpen) setSidebarOpen(true);
           }}
-          className={`hidden sm:flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-            sidebarOpen && activeTab === 'points'
+          className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+            sidebarOpen && activeTab === 'susceptibility'
               ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
-          title="Browse all points"
+          title="Sample landslide susceptibility raster"
         >
-          <Navigation className="w-3.5 h-3.5" />
-          <span>Directory</span>
+          <Crosshair className="w-3.5 h-3.5" />
+          <span>Susceptibility</span>
         </button>
       </div>
 
