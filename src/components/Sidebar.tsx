@@ -18,7 +18,6 @@ import {
   Gauge,
   Loader2,
   Building2,
-  X,
 } from 'lucide-react';
 import {
   LandslideProperties,
@@ -34,8 +33,8 @@ import { SusceptibilitySampleResult } from '../utils/rasterSampler';
 interface SidebarProps {
   activeTab: GisTab;
   setActiveTab: (tab: GisTab) => void;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
   layerVisibility: LayerVisibility;
   onToggleLayer: (layer: keyof LayerVisibility) => void;
   layerOpacity: LayerOpacity;
@@ -65,8 +64,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
-  isOpen,
-  onClose,
+  isOpen = true,
   layerVisibility,
   onToggleLayer,
   layerOpacity,
@@ -227,14 +225,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </>
           )}
         </div>
-
-        <button
-          onClick={onClose}
-          className="text-slate-400 hover:text-slate-200 p-1 rounded hover:bg-slate-800 transition-colors"
-          title="Close Sidebar Panel"
-        >
-          <X className="w-4 h-4" />
-        </button>
       </div>
 
       {/* Main Tab Content */}

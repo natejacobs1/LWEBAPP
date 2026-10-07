@@ -72,7 +72,6 @@ export default function App() {
   const [maxDistanceToRoad, setMaxDistanceToRoad] = useState<number>(1000);
 
   // UI Navigation, Inspector, & Raster Sampling State
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<GisTab>('layers');
   const [selectedPoint, setSelectedPoint] = useState<GeoJsonFeature<LandslideProperties, GeoJSON.Point> | null>(null);
   const [susceptibilitySample, setSusceptibilitySample] = useState<SusceptibilitySampleResult | null>(null);
@@ -209,7 +208,6 @@ export default function App() {
   const handleSelectPoint = useCallback((pt: GeoJsonFeature<LandslideProperties, GeoJSON.Point>) => {
     setSelectedPoint(pt);
     setActiveTab('inspector');
-    setSidebarOpen(true);
   }, []);
 
   // Zoom to point handler
@@ -248,7 +246,6 @@ export default function App() {
     async (lat: number, lng: number) => {
       setIsSamplingRaster(true);
       setActiveTab('susceptibility');
-      if (!sidebarOpen) setSidebarOpen(true);
 
       try {
         const result = await sampleSusceptibilityAtCoord(lat, lng);
@@ -265,7 +262,7 @@ export default function App() {
         setIsSamplingRaster(false);
       }
     },
-    [sidebarOpen]
+    []
   );
 
   return (
@@ -280,8 +277,6 @@ export default function App() {
         onResetView={handleResetView}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
         isLoading={isLoading}
       />
 
@@ -327,8 +322,7 @@ export default function App() {
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
+          isOpen={true}
           layerVisibility={layerVisibility}
           onToggleLayer={handleToggleLayer}
           layerOpacity={layerOpacity}
