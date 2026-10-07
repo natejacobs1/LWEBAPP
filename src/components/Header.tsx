@@ -63,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
             <span className="text-slate-700">·</span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block"></span>
+              <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block shadow-[0_0_4px_#facc15]"></span>
               <span className="text-slate-200 tabular-nums font-semibold">{roadsCount}</span> roads
             </span>
             <span className="text-slate-700">·</span>

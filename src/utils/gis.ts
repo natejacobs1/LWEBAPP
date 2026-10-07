@@ -38,31 +38,23 @@ export const BASEMAPS: BasemapOption[] = [
 ];
 
 export function getRiskLevel(properties: LandslideProperties): RiskLevel {
-  const sc = (properties?.Susceptibility_Class || '').toString().trim().toLowerCase();
-  if (sc === 'very high' || sc === 'very_high' || sc === 'veryhigh') {
-    return 'Very High';
-  }
-  if (sc === 'high') {
-    return 'High';
-  }
-  if (sc === 'low') {
+  // Classification strictly uses Susceptibility_Percentage:
+  // 0–60% → Low Risk (Green)
+  // >60–80% → High Risk (Orange)
+  // >80–100% → Very High Risk (Red)
+  const pct = Number(properties?.Susceptibility_Percentage);
+  if (!isNaN(pct)) {
+    if (pct > 80) return 'Very High';
+    if (pct > 60) return 'High';
     return 'Low';
   }
 
-  const alt = (
-    properties?.risk_level ||
-    properties?.risk ||
-    properties?.Hazard ||
-    ''
-  ).toString().trim().toLowerCase();
-  if (alt.includes('very high') || alt === 'very_high') return 'Very High';
-  if (alt.includes('high')) return 'High';
-  if (alt.includes('low')) return 'Low';
-
-  const pct = Number(properties?.Susceptibility_Percentage);
-  if (!isNaN(pct) && pct > 0) {
-    if (pct >= 75) return 'Very High';
-    if (pct >= 50) return 'High';
+  // Fallback if Susceptibility_Percentage is missing, derive from Landslide_Probability
+  const prob = Number(properties?.Landslide_Probability);
+  if (!isNaN(prob)) {
+    const probPct = prob * 100;
+    if (probPct > 80) return 'Very High';
+    if (probPct > 60) return 'High';
     return 'Low';
   }
 
@@ -78,20 +70,48 @@ export const RISK_COLORS: Record<RiskLevel, { stroke: string; fill: string; text
     border: 'border-emerald-500/30',
   },
   'High': {
-    stroke: '#c2410c',
-    fill: '#f97316',
-    text: 'text-amber-400',
-    bg: 'bg-amber-950/60',
-    border: 'border-amber-500/30',
+    stroke: '#ea580c',
+    fill: '#fdba74',
+    text: 'text-orange-300',
+    bg: 'bg-orange-950/60',
+    border: 'border-orange-400/30',
   },
   'Very High': {
-    stroke: '#b91c1c',
-    fill: '#ef4444',
-    text: 'text-red-400',
-    bg: 'bg-red-950/60',
-    border: 'border-red-500/30',
+    stroke: '#450a0a',
+    fill: '#991b1b',
+    text: 'text-rose-400',
+    bg: 'bg-red-950/80',
+    border: 'border-red-600/40',
   },
 };
+
+export const ALLOWED_DISTRICTS = [
+  'Shivamogga',
+  'Chikkamagaluru',
+  'Udupi',
+  'Dakshina Kannada',
+] as const;
+
+export type AllowedDistrict = (typeof ALLOWED_DISTRICTS)[number];
+
+export function standardizeDistrictName(rawName?: string | null): AllowedDistrict | null {
+  if (!rawName) return null;
+  const cleaned = rawName.trim().toLowerCase();
+  if (cleaned === 'shimoga' || cleaned === 'shivamogga') {
+    return 'Shivamogga';
+  }
+  if (cleaned === 'chikkamagaluru' || cleaned === 'chikmagalur') {
+    return 'Chikkamagaluru';
+  }
+  if (cleaned === 'udupi') {
+    return 'Udupi';
+  }
+  if (cleaned === 'dakshina kannada' || cleaned === 'dakshinakannada') {
+    return 'Dakshina Kannada';
+  }
+  // Any other district (such as Haveri) is rejected
+  return null;
+}
 
 export function formatNum(val: unknown, decimals = 2): string {
   if (val === null || val === undefined || val === '') return '—';

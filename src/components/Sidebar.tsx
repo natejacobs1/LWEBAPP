@@ -96,11 +96,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const q = searchQuery.toLowerCase().trim();
     return filteredLandslideFeatures.filter((f) => {
       const p = f.properties;
+      const dist = String(p.District || '').toLowerCase();
+      const matchesDist = dist.includes(q) || (q.includes('shimo') && dist.includes('shivamogga'));
       return (
         String(p.Point_ID || '').toLowerCase().includes(q) ||
         String(p.Village || '').toLowerCase().includes(q) ||
         String(p.Taluk || '').toLowerCase().includes(q) ||
-        String(p.District || '').toLowerCase().includes(q) ||
+        matchesDist ||
         String(p.Pincode || '').toLowerCase().includes(q)
       );
     });
@@ -306,6 +308,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <EyeOff className="w-4 h-4 text-slate-500" />
                         )}
                       </button>
+                      <span className="w-3 h-1 bg-yellow-400 rounded-sm shadow-[0_0_4px_#facc15] inline-block"></span>
                       <span className="font-medium text-slate-200">Road Network (OSM)</span>
                     </div>
                     <span className="font-mono text-[11px] text-slate-400 tabular-nums">{roadsCount} ways</span>
@@ -386,6 +389,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   const count = allLandslideFeatures.filter(
                     (f) => getRiskLevel(f.properties) === level
                   ).length;
+                  const threshold =
+                    level === 'Very High' ? '>80%' : level === 'High' ? '>60–80%' : '0–60%';
 
                   return (
                     <button
@@ -397,13 +402,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           : 'bg-slate-950/40 border-slate-800 opacity-40 hover:opacity-60'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5 mb-1">
+                      <div className="flex items-center gap-1.5 mb-0.5">
                         <span
                           className="w-2.5 h-2.5 rounded-full inline-block"
                           style={{ backgroundColor: color.fill }}
                         />
                         <span className="font-semibold text-[11px] text-slate-200">{level}</span>
                       </div>
+                      <div className="text-[10px] text-slate-400 font-mono mb-1">{threshold}</div>
                       <div className="font-mono font-bold text-sm text-white tabular-nums">
                         {count.toLocaleString()}
                       </div>
@@ -559,7 +565,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <span>Risk Classification</span>
                           </span>
                           <span className="font-mono text-xs font-bold" style={{ color: color.fill }}>
-                            {formatNum(p.Susceptibility_Percentage, 1)}%
+                            {formatNum(p.Susceptibility_Percentage, 1)}% ({risk})
                           </span>
                         </div>
                         <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -570,6 +576,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               backgroundColor: color.fill,
                             }}
                           />
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+                          <span>Threshold Scale: <strong className="text-slate-300 font-mono">{risk === 'Very High' ? '>80–100%' : risk === 'High' ? '>60–80%' : '0–60%'}</strong></span>
+                          <span className="font-semibold" style={{ color: color.fill }}>{risk} Risk Tier</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
                           <div className="bg-slate-900 p-2 rounded border border-slate-800">
@@ -741,6 +751,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   const count = analyticsData.riskCounts[level];
                   const pct = ((count / analyticsData.total) * 100).toFixed(1);
                   const color = RISK_COLORS[level];
+                  const range = level === 'Very High' ? '>80–100%' : level === 'High' ? '>60–80%' : '0–60%';
 
                   return (
                     <div key={level} className="space-y-1">
@@ -750,7 +761,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             className="w-2 h-2 rounded-full"
                             style={{ backgroundColor: color.fill }}
                           />
-                          <span>{level}</span>
+                          <span>
+                            {level} <span className="text-[10px] text-slate-500 font-mono">({range})</span>
+                          </span>
                         </span>
                         <span className="font-mono text-slate-300">
                           {count.toLocaleString()} ({pct}%)

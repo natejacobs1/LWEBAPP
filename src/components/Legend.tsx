@@ -55,6 +55,8 @@ export const Legend: React.FC<LegendProps> = ({
                   const color = RISK_COLORS[level];
                   const count = counts[level] || 0;
                   const isActive = selectedRiskFilters[level];
+                  const rangeLabel =
+                    level === 'Very High' ? '>80–100%' : level === 'High' ? '>60–80%' : '0–60%';
 
                   return (
                     <button
@@ -75,7 +77,10 @@ export const Legend: React.FC<LegendProps> = ({
                             boxShadow: `0 0 6px ${color.fill}66`,
                           }}
                         />
-                        <span className="font-medium text-slate-200">{level} Risk</span>
+                        <div>
+                          <span className="font-medium text-slate-200">{level}</span>
+                          <span className="text-[10px] text-slate-400 font-mono ml-1.5">{rangeLabel}</span>
+                        </div>
                       </div>
                       <span className="font-mono text-[11px] text-slate-400 tabular-nums">
                         {count.toLocaleString()}
@@ -94,8 +99,8 @@ export const Legend: React.FC<LegendProps> = ({
 
               <div className="flex items-center justify-between px-2 py-1 text-slate-300">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5 bg-cyan-400 shadow-[0_0_4px_#38bdf8] rounded" />
-                  <span>Road Network</span>
+                  <div className="w-4 h-1.5 bg-yellow-400 shadow-[0_0_6px_#facc15] rounded-sm" />
+                  <span className="font-medium text-yellow-100">Road Network (OSM)</span>
                 </div>
                 <span className="font-mono text-[11px] text-slate-400 tabular-nums">{roadsCount}</span>
               </div>

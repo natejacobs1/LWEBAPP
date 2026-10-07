@@ -26,6 +26,7 @@ interface MapContainerProps {
   onSelectPoint: (pt: GeoJsonFeature<LandslideProperties, GeoJSON.Point>) => void;
   resetViewTrigger: number;
   zoomTarget: { lat: number; lng: number; zoom?: number } | null;
+  selectedDistrict?: string;
 }
 
 export const MapContainer: React.FC<MapContainerProps> = ({
@@ -40,6 +41,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   onSelectPoint,
   resetViewTrigger,
   zoomTarget,
+  selectedDistrict = 'ALL',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -195,9 +197,11 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
     const layer = L.geoJSON(roadsData as unknown as GeoJSON.GeoJsonObject, {
       style: () => ({
-        color: '#38bdf8',
-        weight: 2.2,
+        color: '#facc15',
+        weight: 4.5,
         opacity: layerOpacity.roads,
+        lineCap: 'round',
+        lineJoin: 'round',
       }),
       onEachFeature: (feature, layerItem) => {
         const p = feature.properties as RoadProperties;
@@ -205,11 +209,25 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         const ref = p?.ref ? `(${p.ref})` : '';
         const highway = p?.highway || 'road';
 
+        layerItem.on({
+          mouseover: (e) => {
+            const l = e.target;
+            l.setStyle({
+              color: '#fef08a',
+              weight: 6.5,
+            });
+          },
+          mouseout: (e) => {
+            const l = e.target;
+            layer.resetStyle(l);
+          },
+        });
+
         layerItem.bindPopup(
-          `<div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 8px; min-width: 200px; background: #0f172a; color: #f8fafc; border-radius: 6px;">
-            <div style="font-size: 10px; text-transform: uppercase; color: #38bdf8; font-weight: 600;">Transportation Corridor</div>
-            <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-top: 2px;">${name} ${ref}</div>
-            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+          `<div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 10px; min-width: 220px; background: #0f172a; color: #f8fafc; border-radius: 6px;">
+            <div style="font-size: 10px; text-transform: uppercase; color: #facc15; font-weight: 700; letter-spacing: 0.05em;">Transportation Corridor</div>
+            <div style="font-size: 14px; font-weight: 700; color: #ffffff; margin-top: 2px;">${name} ${ref}</div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-top: 1px solid #334155; padding-top: 6px;">
               <span><strong>Type:</strong> ${highway}</span>
               ${p.lanes ? `<span><strong>Lanes:</strong> ${p.lanes}</span>` : ''}
               ${p.surface ? `<span><strong>Surface:</strong> ${p.surface}</span>` : ''}
@@ -219,8 +237,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         );
 
         layerItem.bindTooltip(
-          `<div class="font-sans font-medium text-slate-200">
-            ${name} ${ref}
+          `<div class="font-sans font-medium text-slate-100 flex items-center gap-1.5">
+            <span class="w-3 h-1 bg-yellow-400 rounded-sm inline-block shadow-[0_0_4px_#facc15]"></span>
+            <span>${name} ${ref}</span>
           </div>`,
           { sticky: true }
         );
@@ -328,6 +347,26 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       }
     }
   }, [zoomTarget, selectedPoint]);
+
+  // 8. Handle Zoom to selected district
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !districtsLayerRef.current) return;
+
+    if (selectedDistrict === 'ALL') {
+      if (districtsLayerRef.current.getLayers().length > 0) {
+        map.fitBounds(districtsLayerRef.current.getBounds(), { padding: [40, 40] });
+      }
+      return;
+    }
+
+    districtsLayerRef.current.eachLayer((layer: any) => {
+      const p = layer.feature?.properties as DistrictProperties;
+      if (p?.Dist_Name === selectedDistrict) {
+        map.fitBounds(layer.getBounds(), { padding: [35, 35] });
+      }
+    });
+  }, [selectedDistrict]);
 
   return (
     <div className="relative flex-1 h-full w-full overflow-hidden bg-slate-950">

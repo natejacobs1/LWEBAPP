@@ -16,7 +16,12 @@ import {
   RiskLevel,
   BasemapId,
 } from './types/gis';
-import { GEOJSON_URLS, getRiskLevel } from './utils/gis';
+import {
+  GEOJSON_URLS,
+  getRiskLevel,
+  ALLOWED_DISTRICTS,
+  standardizeDistrictName,
+} from './utils/gis';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MapContainer } from './components/MapContainer';
@@ -47,7 +52,7 @@ export default function App() {
 
   const [layerOpacity, setLayerOpacity] = useState<LayerOpacity>({
     districts: 0.15,
-    roads: 0.85,
+    roads: 1.0,
     landslides: 0.85,
   });
 
@@ -78,7 +83,22 @@ export default function App() {
       setLoadingStep('Fetching district boundaries (districts.geojson)...');
       const districtsRes = await fetch(GEOJSON_URLS.districts);
       if (!districtsRes.ok) throw new Error(`Failed to load districts: ${districtsRes.statusText}`);
-      const districtsJson = await districtsRes.json();
+      const districtsJson: GeoJsonFeatureCollection<DistrictProperties> = await districtsRes.json();
+
+      // Standardize district features and retain strictly the 4 target districts
+      const cleanedDistrictFeatures: GeoJsonFeature<DistrictProperties>[] = [];
+      for (const f of districtsJson.features) {
+        const std = standardizeDistrictName(f.properties?.Dist_Name);
+        if (std) {
+          cleanedDistrictFeatures.push({
+            ...f,
+            properties: {
+              ...f.properties,
+              Dist_Name: std,
+            },
+          });
+        }
+      }
 
       setLoadingStep('Fetching road network corridors (road.geojson)...');
       const roadsRes = await fetch(GEOJSON_URLS.roads);
@@ -88,11 +108,35 @@ export default function App() {
       setLoadingStep('Fetching landslide hazard points (landslide_points.geojson)...');
       const landslidesRes = await fetch(GEOJSON_URLS.landslides);
       if (!landslidesRes.ok) throw new Error(`Failed to load landslide points: ${landslidesRes.statusText}`);
-      const landslidesJson = await landslidesRes.json();
+      const landslidesJson: GeoJsonFeatureCollection<LandslideProperties, GeoJSON.Point> = await landslidesRes.json();
 
-      setDistrictsData(districtsJson);
+      // Standardize landslide features:
+      // 1. Remove all Haveri features completely
+      // 2. Standardize "Shimoga" -> "Shivamogga"
+      // 3. Keep strictly only points within the 4 allowed districts
+      const cleanedLandslideFeatures: GeoJsonFeature<LandslideProperties, GeoJSON.Point>[] = [];
+      for (const f of landslidesJson.features) {
+        const stdDistrict = standardizeDistrictName(f.properties?.District);
+        if (stdDistrict) {
+          cleanedLandslideFeatures.push({
+            ...f,
+            properties: {
+              ...f.properties,
+              District: stdDistrict,
+            },
+          });
+        }
+      }
+
+      setDistrictsData({
+        ...districtsJson,
+        features: cleanedDistrictFeatures,
+      });
       setRoadsData(roadsJson);
-      setLandslidesData(landslidesJson);
+      setLandslidesData({
+        ...landslidesJson,
+        features: cleanedLandslideFeatures,
+      });
       setIsLoading(false);
     } catch (err) {
       console.error('GeoJSON loading error:', err);
@@ -105,21 +149,10 @@ export default function App() {
     fetchData();
   }, [fetchData]);
 
-  // Extract unique district names from landslide points and districts
+  // Project contains ONLY the 4 standardized districts
   const availableDistricts = useMemo(() => {
-    const set = new Set<string>();
-    if (districtsData?.features) {
-      districtsData.features.forEach((f) => {
-        if (f.properties?.Dist_Name) set.add(f.properties.Dist_Name);
-      });
-    }
-    if (landslidesData?.features) {
-      landslidesData.features.forEach((f) => {
-        if (f.properties?.District) set.add(f.properties.District);
-      });
-    }
-    return Array.from(set).sort();
-  }, [districtsData, landslidesData]);
+    return [...ALLOWED_DISTRICTS];
+  }, []);
 
   // Compute risk counts across all points
   const riskCounts = useMemo<Record<RiskLevel, number>>(() => {
@@ -149,11 +182,9 @@ export default function App() {
       // 1. Risk level filter
       if (!selectedRiskFilters[risk]) return false;
 
-      // 2. District filter
+      // 2. District filter (strictly matches selected district from the 4 allowed)
       if (selectedDistrict !== 'ALL') {
-        const d = (p.District || '').toLowerCase();
-        const sel = selectedDistrict.toLowerCase();
-        if (!d.includes(sel) && !sel.includes(d)) return false;
+        if (p.District !== selectedDistrict) return false;
       }
 
       // 3. Susceptibility percentage threshold
@@ -307,6 +338,7 @@ export default function App() {
             onSelectPoint={handleSelectPoint}
             resetViewTrigger={resetViewTrigger}
             zoomTarget={zoomTarget}
+            selectedDistrict={selectedDistrict}
           />
 
           {/* Floating Collapsible GIS Legend */}

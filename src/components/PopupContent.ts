@@ -36,10 +36,15 @@ export function createLandslidePopupHtml(props: LandslideProperties): string {
       <div style="background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 8px; margin-bottom: 10px;">
         <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
           <span style="color: #94a3b8;">Susceptibility:</span>
-          <span style="font-weight: 700; color: ${color.fill}; font-family: 'JetBrains Mono', monospace;">${susc}%</span>
+          <span style="font-weight: 700; color: ${color.fill}; font-family: 'JetBrains Mono', monospace;">${susc}% (${risk} Risk)</span>
         </div>
         <div style="height: 5px; width: 100%; background: #334155; border-radius: 3px; overflow: hidden;">
           <div style="height: 100%; width: ${Math.min(100, Math.max(5, Number(props.Susceptibility_Percentage || 50)))}%; background: ${color.fill}; border-radius: 3px;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 9px; color: #64748b; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
+          <span>Scale: 0–60% Low</span>
+          <span>&gt;60–80% High</span>
+          <span>&gt;80% Very High</span>
         </div>
         ${prob ? `
           <div style="display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; margin-top: 6px;">
