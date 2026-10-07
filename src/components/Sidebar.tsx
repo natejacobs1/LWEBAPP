@@ -18,6 +18,7 @@ import {
   Gauge,
   Loader2,
   Building2,
+  X,
 } from 'lucide-react';
 import {
   LandslideProperties,
@@ -198,61 +199,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-80 md:w-96 bg-slate-900 border-r border-slate-800 flex flex-col h-[calc(100vh-3.5rem)] z-10 shrink-0 select-none shadow-xl">
-      {/* Sidebar Header Tabs: Layers | Inspector | Analytics | Susceptibility */}
-      <div className="flex items-center border-b border-slate-800 bg-slate-950/60 p-1">
-        <button
-          onClick={() => setActiveTab('layers')}
-          className={`flex-1 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'layers'
-              ? 'bg-slate-800 text-cyan-400 font-semibold shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Layers</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('inspector')}
-          className={`flex-1 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'inspector'
-              ? 'bg-slate-800 text-cyan-400 font-semibold shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <MapPin className="w-3.5 h-3.5" />
-          <span>Inspector</span>
-          {selectedPoint && (
-            <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
+      {/* Sidebar Panel Header */}
+      <div className="h-11 px-3.5 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          {activeTab === 'layers' && (
+            <>
+              <Layers className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">Layers & Risk Controls</span>
+            </>
           )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex-1 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'analytics'
-              ? 'bg-slate-800 text-cyan-400 font-semibold shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          <span>Analytics</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('susceptibility')}
-          className={`flex-1 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'susceptibility'
-              ? 'bg-slate-800 text-cyan-400 font-semibold shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-          title="Sample susceptibility raster"
-        >
-          <Crosshair className="w-3.5 h-3.5" />
-          <span>Susceptibility</span>
-          {susceptibilitySample && (
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block"></span>
+          {activeTab === 'inspector' && (
+            <>
+              <MapPin className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">Feature Inspector</span>
+            </>
           )}
+          {activeTab === 'analytics' && (
+            <>
+              <BarChart3 className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">Spatial Analytics</span>
+            </>
+          )}
+          {activeTab === 'susceptibility' && (
+            <>
+              <Crosshair className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">Susceptibility Tool</span>
+            </>
+          )}
+        </div>
+
+        <button
+          onClick={onClose}
+          className="text-slate-400 hover:text-slate-200 p-1 rounded hover:bg-slate-800 transition-colors"
+          title="Close Sidebar Panel"
+        >
+          <X className="w-4 h-4" />
         </button>
       </div>
 

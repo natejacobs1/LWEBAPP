@@ -43,8 +43,9 @@ export const Header: React.FC<HeaderProps> = ({
             <Compass className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold tracking-tight text-white leading-tight">
-              Landslide Risk Monitoring System
+            <h1 className="text-sm font-semibold tracking-tight text-white leading-tight flex items-center gap-1.5">
+              <span>LIRA</span>
+              <span className="text-slate-400 font-normal hidden sm:inline">— Landslide Intelligence & Risk Analytics</span>
             </h1>
             <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
               <span>Karnataka Western Ghats</span>

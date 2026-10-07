@@ -1,6 +1,6 @@
 {
-  "name": "Landslide Risk Monitoring System",
-  "description": "Interactive Web GIS application monitoring landslide susceptibility, risk levels, road networks, and district boundaries in Karnataka.",
+  "name": "LIRA — Landslide Intelligence & Risk Analytics",
+  "description": "LIRA: Interactive Web GIS application monitoring landslide susceptibility, risk levels, road networks, and district boundaries in Karnataka.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
