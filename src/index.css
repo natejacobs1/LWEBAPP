@@ -102,3 +102,20 @@
   border-top-color: rgba(56, 189, 248, 0.4) !important;
 }
 
+/* Prevent popup flickering, jumping and horizontal overflow */
+.landslide-popup,
+.raster-query-popup {
+  pointer-events: auto !important;
+}
+
+.landslide-popup .leaflet-popup-content-wrapper,
+.raster-query-popup .leaflet-popup-content-wrapper {
+  max-width: min(340px, calc(100vw - 32px)) !important;
+}
+
+.landslide-popup .leaflet-popup-content,
+.raster-query-popup .leaflet-popup-content {
+  max-width: min(320px, calc(100vw - 44px)) !important;
+  margin: 0 !important;
+}
+

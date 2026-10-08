@@ -12,7 +12,7 @@ export function createLandslidePopupHtml(props: LandslideProperties): string {
   const district = props.District || '—';
 
   return `
-    <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; min-width: 280px; max-width: 320px; padding: 12px; background: #0f172a; color: #f8fafc; border-radius: 8px;">
+    <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; min-width: 250px; max-width: min(320px, calc(100vw - 48px)); padding: 12px; background: #0f172a; color: #f8fafc; border-radius: 8px;">
       <!-- Header -->
       <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
         <div>

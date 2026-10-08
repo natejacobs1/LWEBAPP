@@ -1,6 +1,6 @@
 import React from 'react';
-import { Layers, MapPin, Navigation, BarChart3, RotateCcw, Compass, Map as MapIcon } from 'lucide-react';
-import { BasemapId, BasemapOption } from '../types/gis';
+import { Layers, MapPin, BarChart3, RotateCcw, Compass, Map as MapIcon, Crosshair } from 'lucide-react';
+import { BasemapId, GisTab } from '../types/gis';
 import { BASEMAPS } from '../utils/gis';
 
 interface HeaderProps {
@@ -10,10 +10,8 @@ interface HeaderProps {
   selectedBasemap: BasemapId;
   onSelectBasemap: (id: BasemapId) => void;
   onResetView: () => void;
-  activeTab: 'layers' | 'inspector' | 'analytics' | 'points';
-  setActiveTab: (tab: 'layers' | 'inspector' | 'analytics' | 'points') => void;
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
+  activeTab: GisTab;
+  setActiveTab: (tab: GisTab) => void;
   isLoading: boolean;
 }
 
@@ -26,8 +24,6 @@ export const Header: React.FC<HeaderProps> = ({
   onResetView,
   activeTab,
   setActiveTab,
-  sidebarOpen,
-  setSidebarOpen,
   isLoading,
 }) => {
   const [basemapDropdown, setBasemapDropdown] = React.useState(false);
@@ -43,8 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
             <Compass className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold tracking-tight text-white leading-tight">
-              Landslide Risk Monitoring System
+            <h1 className="text-sm font-semibold tracking-tight text-white leading-tight flex items-center gap-1.5">
+              <span>LIRA</span>
+              <span className="text-slate-400 font-normal hidden sm:inline">— Landslide Intelligence & Risk Analytics</span>
             </h1>
             <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
               <span>Karnataka Western Ghats</span>
@@ -78,12 +75,9 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Zone 2: Navigation tabs / Console switchers */}
       <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
         <button
-          onClick={() => {
-            setActiveTab('layers');
-            if (!sidebarOpen) setSidebarOpen(true);
-          }}
+          onClick={() => setActiveTab('layers')}
           className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-            sidebarOpen && activeTab === 'layers'
+            activeTab === 'layers'
               ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
@@ -94,12 +88,9 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <button
-          onClick={() => {
-            setActiveTab('inspector');
-            if (!sidebarOpen) setSidebarOpen(true);
-          }}
+          onClick={() => setActiveTab('inspector')}
           className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-            sidebarOpen && activeTab === 'inspector'
+            activeTab === 'inspector'
               ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
@@ -110,12 +101,9 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <button
-          onClick={() => {
-            setActiveTab('analytics');
-            if (!sidebarOpen) setSidebarOpen(true);
-          }}
+          onClick={() => setActiveTab('analytics')}
           className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-            sidebarOpen && activeTab === 'analytics'
+            activeTab === 'analytics'
               ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
@@ -126,23 +114,20 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <button
-          onClick={() => {
-            setActiveTab('points');
-            if (!sidebarOpen) setSidebarOpen(true);
-          }}
-          className={`hidden sm:flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-            sidebarOpen && activeTab === 'points'
+          onClick={() => setActiveTab('susceptibility')}
+          className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+            activeTab === 'susceptibility'
               ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
-          title="Browse all points"
+          title="Sample landslide susceptibility raster"
         >
-          <Navigation className="w-3.5 h-3.5" />
-          <span>Directory</span>
+          <Crosshair className="w-3.5 h-3.5" />
+          <span>Susceptibility</span>
         </button>
       </div>
 
-      {/* Zone 3: Primary Actions (Basemap switcher, Reset Extent, Sidebar toggle) */}
+      {/* Zone 3: Primary Actions (Basemap switcher, Reset Extent) */}
       <div className="flex items-center gap-2">
         {/* Basemap dropdown */}
         <div className="relative">
@@ -197,19 +182,6 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <RotateCcw className="w-3.5 h-3.5 text-slate-400 hover:text-white" />
           <span className="hidden sm:inline">Fit Extent</span>
-        </button>
-
-        {/* Toggle Sidebar */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`p-1.5 rounded-md border text-xs transition-colors ${
-            sidebarOpen
-              ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/40'
-              : 'bg-slate-800/90 text-slate-300 border-slate-700 hover:bg-slate-700'
-          }`}
-          title={sidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'}
-        >
-          <Layers className="w-4 h-4" />
         </button>
       </div>
     </header>

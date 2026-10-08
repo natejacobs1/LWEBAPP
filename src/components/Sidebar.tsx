@@ -3,21 +3,21 @@ import {
   Layers,
   MapPin,
   BarChart3,
-  Search,
   Filter,
   Eye,
   EyeOff,
-  Navigation,
+  Crosshair,
   Sliders,
   AlertTriangle,
-  Compass,
+  AlertCircle,
   Copy,
   Check,
-  ChevronRight,
   TrendingUp,
   CloudRain,
   Mountain,
-  Gauge
+  Gauge,
+  Loader2,
+  Building2,
 } from 'lucide-react';
 import {
   LandslideProperties,
@@ -25,14 +25,16 @@ import {
   LayerOpacity,
   RiskLevel,
   GeoJsonFeature,
+  GisTab,
 } from '../types/gis';
-import { getRiskLevel, RISK_COLORS, formatNum } from '../utils/gis';
+import { getRiskLevel, RISK_COLORS, formatNum, standardizeDistrictName, AllowedDistrict } from '../utils/gis';
+import { SusceptibilitySampleResult } from '../utils/rasterSampler';
 
 interface SidebarProps {
-  activeTab: 'layers' | 'inspector' | 'analytics' | 'points';
-  setActiveTab: (tab: 'layers' | 'inspector' | 'analytics' | 'points') => void;
-  isOpen: boolean;
-  onClose: () => void;
+  activeTab: GisTab;
+  setActiveTab: (tab: GisTab) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
   layerVisibility: LayerVisibility;
   onToggleLayer: (layer: keyof LayerVisibility) => void;
   layerOpacity: LayerOpacity;
@@ -55,13 +57,14 @@ interface SidebarProps {
   filteredLandslideFeatures: GeoJsonFeature<LandslideProperties, GeoJSON.Point>[];
   districtsCount: number;
   roadsCount: number;
+  susceptibilitySample: SusceptibilitySampleResult | null;
+  isSamplingRaster: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
-  isOpen,
-  onClose,
+  isOpen = true,
   layerVisibility,
   onToggleLayer,
   layerOpacity,
@@ -84,36 +87,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   filteredLandslideFeatures,
   districtsCount,
   roadsCount,
+  susceptibilitySample,
+  isSamplingRaster,
 }) => {
   const [copiedCoord, setCopiedCoord] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
-
-  // Search filtered points
-  const searchedPoints = useMemo(() => {
-    if (!searchQuery.trim()) return filteredLandslideFeatures;
-    const q = searchQuery.toLowerCase().trim();
-    return filteredLandslideFeatures.filter((f) => {
-      const p = f.properties;
-      const dist = String(p.District || '').toLowerCase();
-      const matchesDist = dist.includes(q) || (q.includes('shimo') && dist.includes('shivamogga'));
-      return (
-        String(p.Point_ID || '').toLowerCase().includes(q) ||
-        String(p.Village || '').toLowerCase().includes(q) ||
-        String(p.Taluk || '').toLowerCase().includes(q) ||
-        matchesDist ||
-        String(p.Pincode || '').toLowerCase().includes(q)
-      );
-    });
-  }, [filteredLandslideFeatures, searchQuery]);
-
-  const paginatedPoints = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return searchedPoints.slice(start, start + pageSize);
-  }, [searchedPoints, currentPage]);
-
-  const totalPages = Math.ceil(searchedPoints.length / pageSize) || 1;
 
   // Analytics computation
   const analyticsData = useMemo(() => {
@@ -162,6 +139,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
   }, [allLandslideFeatures]);
 
+  // District Risk Zone Analysis: calculated dynamically strictly for the 4 target districts
+  const districtRiskData = useMemo(() => {
+    const targetDistricts: AllowedDistrict[] = ['Shivamogga', 'Chikkamagaluru', 'Udupi', 'Dakshina Kannada'];
+    const data: Record<AllowedDistrict, { total: number; low: number; high: number; veryHigh: number }> = {
+      Shivamogga: { total: 0, low: 0, high: 0, veryHigh: 0 },
+      Chikkamagaluru: { total: 0, low: 0, high: 0, veryHigh: 0 },
+      Udupi: { total: 0, low: 0, high: 0, veryHigh: 0 },
+      'Dakshina Kannada': { total: 0, low: 0, high: 0, veryHigh: 0 },
+    };
+
+    allLandslideFeatures.forEach((f) => {
+      const std = standardizeDistrictName(f.properties?.District);
+      if (std && data[std]) {
+        const risk = getRiskLevel(f.properties);
+        data[std].total++;
+        if (risk === 'Very High') data[std].veryHigh++;
+        else if (risk === 'High') data[std].high++;
+        else data[std].low++;
+      }
+    });
+
+    let maxTotal = { district: targetDistricts[0], count: -1 };
+    let maxLow = { district: targetDistricts[0], count: -1 };
+    let maxHigh = { district: targetDistricts[0], count: -1 };
+    let maxVeryHigh = { district: targetDistricts[0], count: -1 };
+
+    targetDistricts.forEach((d) => {
+      const s = data[d];
+      if (s.total > maxTotal.count) maxTotal = { district: d, count: s.total };
+      if (s.low > maxLow.count) maxLow = { district: d, count: s.low };
+      if (s.high > maxHigh.count) maxHigh = { district: d, count: s.high };
+      if (s.veryHigh > maxVeryHigh.count) maxVeryHigh = { district: d, count: s.veryHigh };
+    });
+
+    return {
+      districts: targetDistricts.map((d) => ({
+        name: d,
+        ...data[d],
+      })),
+      highlights: {
+        maxTotal,
+        maxLow,
+        maxHigh,
+        maxVeryHigh,
+      },
+    };
+  }, [allLandslideFeatures]);
+
   const copyCoordinates = (lat: number, lng: number) => {
     navigator.clipboard.writeText(`${lat}, ${lng}`);
     setCopiedCoord(true);
@@ -172,58 +197,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-80 md:w-96 bg-slate-900 border-r border-slate-800 flex flex-col h-[calc(100vh-3.5rem)] z-10 shrink-0 select-none shadow-xl">
-      {/* Sidebar Header Tabs */}
-      <div className="flex items-center border-b border-slate-800 bg-slate-950/60 p-1">
-        <button
-          onClick={() => setActiveTab('layers')}
-          className={`flex-1 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'layers'
-              ? 'bg-slate-800 text-cyan-400 font-semibold shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Layers</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('inspector')}
-          className={`flex-1 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'inspector'
-              ? 'bg-slate-800 text-cyan-400 font-semibold shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <MapPin className="w-3.5 h-3.5" />
-          <span>Inspector</span>
-          {selectedPoint && (
-            <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
+      {/* Sidebar Panel Header */}
+      <div className="h-11 px-3.5 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          {activeTab === 'layers' && (
+            <>
+              <Layers className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">Layers & Risk Controls</span>
+            </>
           )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex-1 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'analytics'
-              ? 'bg-slate-800 text-cyan-400 font-semibold shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          <span>Analytics</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('points')}
-          className={`flex-1 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === 'points'
-              ? 'bg-slate-800 text-cyan-400 font-semibold shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Navigation className="w-3.5 h-3.5" />
-          <span>Directory</span>
-        </button>
+          {activeTab === 'inspector' && (
+            <>
+              <MapPin className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">Feature Inspector</span>
+            </>
+          )}
+          {activeTab === 'analytics' && (
+            <>
+              <BarChart3 className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">Spatial Analytics</span>
+            </>
+          )}
+          {activeTab === 'susceptibility' && (
+            <>
+              <Crosshair className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">Susceptibility Tool</span>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Main Tab Content */}
@@ -550,7 +551,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               onClick={() => onZoomToPoint(coords[1], coords[0])}
                               className="px-2 py-0.5 bg-cyan-950 border border-cyan-800/60 text-cyan-400 hover:bg-cyan-900 rounded text-[10px] font-sans font-medium flex items-center gap-1 transition-colors"
                             >
-                              <Navigation className="w-3 h-3" />
+                              <Crosshair className="w-3 h-3" />
                               <span>Zoom</span>
                             </button>
                           </div>
@@ -688,15 +689,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div>
                   <h4 className="font-semibold text-slate-200 text-sm">No Landslide Point Selected</h4>
                   <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-                    Click any point marker on the map or select a feature from the Directory to inspect its
-                    complete attributes.
+                    Click any point marker on the map to inspect its terrain, rainfall, and model attributes.
                   </p>
                 </div>
                 <button
-                  onClick={() => setActiveTab('points')}
+                  onClick={() => setActiveTab('susceptibility')}
                   className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-md font-medium text-xs transition-colors inline-block"
                 >
-                  Browse Points Directory
+                  Switch to Susceptibility Tool
                 </button>
               </div>
             )}
@@ -784,20 +784,166 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
 
-            {/* Top Districts */}
-            <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800 space-y-2">
-              <span className="text-[10px] text-slate-500 block uppercase font-semibold">
-                Points by District
-              </span>
+            {/* 1. DISTRICT RISK ZONE ANALYSIS (Strictly for the 4 target districts) */}
+            <div className="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>District Risk Zone Analysis</span>
+                </div>
+                <span className="text-[10px] font-mono text-cyan-400 font-semibold px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/60">
+                  4 Target Districts
+                </span>
+              </div>
+
+              {/* Dynamic Highlights / Records */}
               <div className="space-y-1.5">
-                {analyticsData.topDistricts.map(([district, count]) => {
-                  const pct = ((count / analyticsData.total) * 100).toFixed(0);
+                <span className="text-[10px] text-slate-500 uppercase font-semibold block">
+                  Category High Points
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-md p-2 flex flex-col justify-between">
+                    <span className="text-slate-400 font-medium">Most Total Zones</span>
+                    <div className="font-semibold text-slate-100 text-xs mt-1 truncate">
+                      {districtRiskData.highlights.maxTotal.district}
+                    </div>
+                    <span className="font-mono text-cyan-400 font-bold text-[11px] mt-0.5">
+                      {districtRiskData.highlights.maxTotal.count} zones
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-900/90 border border-red-950/80 rounded-md p-2 flex flex-col justify-between">
+                    <span className="text-slate-400 font-medium">Most Very High Risk</span>
+                    <div className="font-semibold text-rose-300 text-xs mt-1 truncate">
+                      {districtRiskData.highlights.maxVeryHigh.district}
+                    </div>
+                    <span className="font-mono text-rose-400 font-bold text-[11px] mt-0.5">
+                      {districtRiskData.highlights.maxVeryHigh.count} zones
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-900/90 border border-orange-950/80 rounded-md p-2 flex flex-col justify-between">
+                    <span className="text-slate-400 font-medium">Most High Risk</span>
+                    <div className="font-semibold text-orange-200 text-xs mt-1 truncate">
+                      {districtRiskData.highlights.maxHigh.district}
+                    </div>
+                    <span className="font-mono text-orange-400 font-bold text-[11px] mt-0.5">
+                      {districtRiskData.highlights.maxHigh.count} zones
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-900/90 border border-emerald-950/80 rounded-md p-2 flex flex-col justify-between">
+                    <span className="text-slate-400 font-medium">Most Low Risk</span>
+                    <div className="font-semibold text-emerald-200 text-xs mt-1 truncate">
+                      {districtRiskData.highlights.maxLow.district}
+                    </div>
+                    <span className="font-mono text-emerald-400 font-bold text-[11px] mt-0.5">
+                      {districtRiskData.highlights.maxLow.count} zones
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* District Breakdown Cards */}
+              <div className="space-y-2 pt-1">
+                <span className="text-[10px] text-slate-500 uppercase font-semibold block">
+                  District Risk Distributions
+                </span>
+                {districtRiskData.districts.map((d) => {
+                  const isMaxTotal = d.name === districtRiskData.highlights.maxTotal.district;
+                  const isMaxVeryHigh = d.name === districtRiskData.highlights.maxVeryHigh.district;
+                  const isMaxHigh = d.name === districtRiskData.highlights.maxHigh.district;
+                  const isMaxLow = d.name === districtRiskData.highlights.maxLow.district;
+
+                  const lowPct = d.total > 0 ? (d.low / d.total) * 100 : 0;
+                  const highPct = d.total > 0 ? (d.high / d.total) * 100 : 0;
+                  const veryHighPct = d.total > 0 ? (d.veryHigh / d.total) * 100 : 0;
+
                   return (
-                    <div key={district} className="flex items-center justify-between text-[11px] py-1 border-b border-slate-900 last:border-0">
-                      <span className="text-slate-300">{district}</span>
-                      <span className="font-mono text-slate-400 tabular-nums">
-                        {count} ({pct}%)
-                      </span>
+                    <div
+                      key={d.name}
+                      className="bg-slate-900/80 border border-slate-800/90 rounded-lg p-2.5 space-y-2 transition-all hover:border-slate-700"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-slate-100 text-xs">{d.name}</span>
+                          {isMaxVeryHigh && (
+                            <span className="px-1.5 py-0.5 bg-red-950 text-rose-300 border border-red-800/80 rounded text-[9px] font-medium leading-none">
+                              Highest Very High
+                            </span>
+                          )}
+                          {isMaxTotal && (
+                            <span className="px-1.5 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-800/80 rounded text-[9px] font-medium leading-none">
+                              Highest Total
+                            </span>
+                          )}
+                          {isMaxHigh && !isMaxTotal && (
+                            <span className="px-1.5 py-0.5 bg-orange-950 text-orange-300 border border-orange-800/80 rounded text-[9px] font-medium leading-none">
+                              Highest High
+                            </span>
+                          )}
+                          {isMaxLow && !isMaxTotal && (
+                            <span className="px-1.5 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800/80 rounded text-[9px] font-medium leading-none">
+                              Highest Low
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-mono text-xs font-bold text-slate-200">
+                          {d.total} <span className="text-[10px] text-slate-500 font-normal">zones</span>
+                        </span>
+                      </div>
+
+                      {/* 3 Risk Columns */}
+                      <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                        <div className="bg-slate-950/70 p-1.5 rounded border border-emerald-950/60">
+                          <span className="text-slate-400 block text-[9px]">Low Risk</span>
+                          <span className="font-mono font-bold text-emerald-400 text-xs block">
+                            {d.low}
+                          </span>
+                          <span className="text-[9px] text-slate-500 font-mono">
+                            {lowPct.toFixed(0)}%
+                          </span>
+                        </div>
+
+                        <div className="bg-slate-950/70 p-1.5 rounded border border-orange-950/60">
+                          <span className="text-slate-400 block text-[9px]">High Risk</span>
+                          <span className="font-mono font-bold text-orange-400 text-xs block">
+                            {d.high}
+                          </span>
+                          <span className="text-[9px] text-slate-500 font-mono">
+                            {highPct.toFixed(0)}%
+                          </span>
+                        </div>
+
+                        <div className="bg-slate-950/70 p-1.5 rounded border border-red-950/60">
+                          <span className="text-slate-400 block text-[9px]">Very High</span>
+                          <span className="font-mono font-bold text-rose-400 text-xs block">
+                            {d.veryHigh}
+                          </span>
+                          <span className="text-[9px] text-slate-500 font-mono">
+                            {veryHighPct.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Segmented Risk Ratio Bar */}
+                      <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden flex">
+                        <div
+                          style={{ width: `${lowPct}%` }}
+                          className="bg-emerald-500 h-full"
+                          title={`Low Risk: ${d.low} (${lowPct.toFixed(1)}%)`}
+                        />
+                        <div
+                          style={{ width: `${highPct}%` }}
+                          className="bg-orange-500 h-full"
+                          title={`High Risk: ${d.high} (${highPct.toFixed(1)}%)`}
+                        />
+                        <div
+                          style={{ width: `${veryHighPct}%` }}
+                          className="bg-red-600 h-full"
+                          title={`Very High Risk: ${d.veryHigh} (${veryHighPct.toFixed(1)}%)`}
+                        />
+                      </div>
                     </div>
                   );
                 })}
@@ -821,107 +967,214 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* TAB 4: DIRECTORY / SEARCH */}
-        {activeTab === 'points' && (
-          <div className="space-y-3">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-              <input
-                type="text"
-                placeholder="Search village, taluk, point ID..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
-              />
+        {/* TAB 4: SUSCEPTIBILITY RASTER SAMPLER (Directly replacing Directory) */}
+        {activeTab === 'susceptibility' && (
+          <div className="space-y-4">
+            {/* Header Callout: "Click inside the susceptibility map to check landslide risk." */}
+            <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-semibold flex items-center gap-1.5">
+                  <Crosshair className="w-3 h-3 text-cyan-400" />
+                  <span>Raster Query</span>
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">lsm_map_web.tif</span>
+              </div>
+              <h3 className="text-sm font-semibold text-white leading-snug">
+                Click inside the susceptibility map to check landslide risk.
+              </h3>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Queries the 30-meter continuous landslide susceptibility model (EPSG:32643 UTM 43N).
+              </p>
             </div>
 
-            <div className="text-[11px] text-slate-400 flex justify-between items-center px-1">
-              <span>Showing {searchedPoints.length} points</span>
-              <span>Page {currentPage} of {totalPages}</span>
-            </div>
+            {/* Loading Indicator */}
+            {isSamplingRaster && (
+              <div className="py-8 text-center space-y-2 bg-slate-950/60 border border-slate-800/80 rounded-lg p-4">
+                <Loader2 className="w-6 h-6 text-cyan-400 animate-spin mx-auto" />
+                <p className="text-xs text-slate-200 font-medium">Sampling raster pixel...</p>
+                <p className="text-[10px] font-mono text-slate-500">Window read from lsm_map_web.tif</p>
+              </div>
+            )}
 
-            {/* Point items */}
-            <div className="space-y-1.5">
-              {paginatedPoints.map((pt) => {
-                const p = pt.properties;
-                const risk = getRiskLevel(p);
-                const color = RISK_COLORS[risk];
-                const coords = pt.geometry.coordinates as [number, number];
-                const isSelected = selectedPoint?.properties.Point_ID === p.Point_ID;
-
-                return (
-                  <div
-                    key={p.Point_ID || p.fid}
-                    onClick={() => {
-                      onSelectPoint(pt);
-                      onZoomToPoint(coords[1], coords[0]);
-                    }}
-                    className={`p-2.5 rounded-lg border text-left cursor-pointer transition-all flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-slate-800 border-cyan-500/80 shadow-md ring-1 ring-cyan-500/30'
-                        : 'bg-slate-950/70 border-slate-800/80 hover:bg-slate-900 hover:border-slate-700'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="w-2 h-2 rounded-full inline-block"
-                          style={{ backgroundColor: color.fill }}
-                        />
-                        <span className="font-semibold text-slate-200">
-                          {p.Village || `Point #${p.Point_ID}`}
-                        </span>
-                        <span className="font-mono text-[10px] text-slate-500">#{p.Point_ID}</span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        {p.Taluk || '—'}, {p.District || '—'}
-                      </div>
+            {/* Results Display */}
+            {!isSamplingRaster && susceptibilitySample && (
+              <div className="space-y-3">
+                {/* Case 1: Outside Raster Extent */}
+                {susceptibilitySample.status === 'outside' && (
+                  <div className="bg-red-950/40 border border-red-500/40 rounded-lg p-3.5 space-y-2">
+                    <div className="flex items-center gap-2 text-red-400 font-semibold text-xs">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                      <span>Out of Bounds</span>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <div
-                        className="font-mono font-bold text-[11px]"
-                        style={{ color: color.fill }}
-                      >
-                        {formatNum(p.Susceptibility_Percentage, 0)}%
+                    <div className="text-xs font-semibold text-red-200">
+                      Please click inside the susceptibility map area.
+                    </div>
+                    <div className="pt-2 border-t border-red-900/40 text-[11px] font-mono text-slate-400 space-y-1">
+                      <div>Lat: {formatNum(susceptibilitySample.latitude, 5)}° N</div>
+                      <div>Lng: {formatNum(susceptibilitySample.longitude, 5)}° E</div>
+                      <div className="text-[10px] text-slate-500 pt-1">
+                        Coordinates fall outside the geographic coverage of lsm_map_web.tif.
                       </div>
-                      <div className="text-[9px] text-slate-500 uppercase">{risk}</div>
                     </div>
                   </div>
-                );
-              })}
+                )}
 
-              {paginatedPoints.length === 0 && (
-                <div className="text-center py-8 text-slate-500 text-xs">
-                  No landslide points match the current filter or search criteria.
+                {/* Case 2: NoData Pixel */}
+                {susceptibilitySample.status === 'nodata' && (
+                  <div className="bg-amber-950/40 border border-amber-500/40 rounded-lg p-3.5 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+                      <span>NoData Location</span>
+                    </div>
+                    <div className="text-xs font-semibold text-amber-200">
+                      No susceptibility data available at this location.
+                    </div>
+                    <div className="pt-2 border-t border-amber-900/40 text-[11px] font-mono text-slate-400 space-y-1">
+                      <div>Lat: {formatNum(susceptibilitySample.latitude, 5)}° N</div>
+                      <div>Lng: {formatNum(susceptibilitySample.longitude, 5)}° E</div>
+                      <div className="text-[10px] text-slate-500 pt-1">
+                        Location is within the bounding area but lacks valid raster data.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Case 3: Valid Susceptibility Sample */}
+                {susceptibilitySample.status === 'valid' && (() => {
+                  const color = RISK_COLORS[susceptibilitySample.riskClass];
+                  return (
+                    <div className="space-y-3">
+                      <div className="bg-slate-950/90 border border-slate-800 rounded-lg p-3.5 space-y-3 shadow-lg">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                              Calculated Susceptibility
+                            </span>
+                            <div className="text-2xl font-bold font-mono tracking-tight text-white mt-0.5">
+                              {formatNum(susceptibilitySample.susceptibility, 2)}%
+                            </div>
+                          </div>
+                          <span
+                            className="px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5"
+                            style={{
+                              backgroundColor: `${color.stroke}33`,
+                              color: color.fill,
+                              border: `1px solid ${color.stroke}`,
+                            }}
+                          >
+                            <span
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: color.fill }}
+                            />
+                            {susceptibilitySample.riskClass} Risk
+                          </span>
+                        </div>
+
+                        {/* Visual Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${Math.min(100, Math.max(5, susceptibilitySample.susceptibility))}%`,
+                                backgroundColor: color.fill,
+                              }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[10px] font-mono text-slate-400 pt-0.5">
+                            <span>0%</span>
+                            <span>60% (Low)</span>
+                            <span>80% (High)</span>
+                            <span>100%</span>
+                          </div>
+                        </div>
+
+                        {/* Explicit Attributes Card */}
+                        <div className="pt-2 border-t border-slate-800/80 space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between py-1 border-b border-slate-900">
+                            <span className="text-slate-400">Susceptibility</span>
+                            <span className="font-mono font-bold" style={{ color: color.fill }}>
+                              {formatNum(susceptibilitySample.susceptibility, 2)}%
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between py-1 border-b border-slate-900">
+                            <span className="text-slate-400">Risk Class</span>
+                            <span className="font-semibold text-slate-200">
+                              {susceptibilitySample.riskClass}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between py-1 border-b border-slate-900">
+                            <span className="text-slate-400">Latitude</span>
+                            <span className="font-mono text-slate-200">
+                              {formatNum(susceptibilitySample.latitude, 5)}° N
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between py-1">
+                            <span className="text-slate-400">Longitude</span>
+                            <span className="font-mono text-slate-200">
+                              {formatNum(susceptibilitySample.longitude, 5)}° E
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Copy Coordinates & Zoom Controls */}
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80">
+                          <button
+                            onClick={() =>
+                              copyCoordinates(
+                                susceptibilitySample.latitude,
+                                susceptibilitySample.longitude
+                              )
+                            }
+                            className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded text-[11px] font-medium flex items-center gap-1 transition-colors border border-slate-800"
+                          >
+                            {copiedCoord ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                            <span>{copiedCoord ? 'Copied' : 'Copy Coords'}</span>
+                          </button>
+                          <button
+                            onClick={() =>
+                              onZoomToPoint(
+                                susceptibilitySample.latitude,
+                                susceptibilitySample.longitude
+                              )
+                            }
+                            className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 rounded text-[11px] font-medium flex items-center gap-1 transition-colors border border-cyan-800/60"
+                          >
+                            <Crosshair className="w-3.5 h-3.5" />
+                            <span>Center Map</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Empty State Instructions */}
+            {!isSamplingRaster && !susceptibilitySample && (
+              <div className="py-10 px-4 text-center space-y-3 bg-slate-950/40 border border-slate-800/60 rounded-lg">
+                <div className="w-12 h-12 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center mx-auto text-slate-400">
+                  <Crosshair className="w-6 h-6 text-cyan-400 animate-pulse" />
                 </div>
-              )}
-            </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
-                <button
-                  disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="px-2.5 py-1 bg-slate-800 disabled:opacity-30 rounded hover:bg-slate-700 text-slate-300 transition-colors"
-                >
-                  Previous
-                </button>
-                <span className="text-slate-400 font-mono text-[11px]">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="px-2.5 py-1 bg-slate-800 disabled:opacity-30 rounded hover:bg-slate-700 text-slate-300 transition-colors"
-                >
-                  Next
-                </button>
+                <div>
+                  <h4 className="font-semibold text-slate-200 text-sm">
+                    Click inside the susceptibility map to check landslide risk.
+                  </h4>
+                  <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                    Click anywhere inside the Western Ghats region on the map to query the underlying 30-meter susceptibility GeoTIFF pixel.
+                  </p>
+                </div>
+                <div className="p-2.5 bg-slate-900/80 border border-slate-800 rounded text-[11px] text-slate-400 font-mono text-left space-y-1">
+                  <div className="text-[10px] text-slate-500 uppercase font-semibold">Risk Classification Rules:</div>
+                  <div className="text-emerald-400">● 0–60% → Low Risk (Green)</div>
+                  <div className="text-orange-300">● &gt;60–80% → High Risk (Orange)</div>
+                  <div className="text-rose-400">● &gt;80–100% → Very High Risk (Red)</div>
+                </div>
               </div>
             )}
           </div>
