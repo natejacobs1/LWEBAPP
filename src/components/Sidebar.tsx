@@ -18,6 +18,7 @@ import {
   Gauge,
   Loader2,
   Building2,
+  Grid,
 } from 'lucide-react';
 import {
   LandslideProperties,
@@ -26,9 +27,11 @@ import {
   RiskLevel,
   GeoJsonFeature,
   GisTab,
+  LcfMapId,
 } from '../types/gis';
 import { getRiskLevel, RISK_COLORS, formatNum, standardizeDistrictName, AllowedDistrict } from '../utils/gis';
 import { SusceptibilitySampleResult } from '../utils/rasterSampler';
+import { LCF_MAP_OPTIONS } from '../utils/lcfMaps';
 
 interface SidebarProps {
   activeTab: GisTab;
@@ -59,6 +62,12 @@ interface SidebarProps {
   roadsCount: number;
   susceptibilitySample: SusceptibilitySampleResult | null;
   isSamplingRaster: boolean;
+  selectedLcfMapId?: LcfMapId;
+  onSelectLcfMap?: (id: LcfMapId) => void;
+  lcfOpacity?: number;
+  onChangeLcfOpacity?: (val: number) => void;
+  isLoadingLcfRaster?: boolean;
+  lcfError?: string | null;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -89,6 +98,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   roadsCount,
   susceptibilitySample,
   isSamplingRaster,
+  selectedLcfMapId = 'slope',
+  onSelectLcfMap,
+  lcfOpacity = 0.75,
+  onChangeLcfOpacity,
+  isLoadingLcfRaster = false,
+  lcfError,
 }) => {
   const [copiedCoord, setCopiedCoord] = useState(false);
 
@@ -222,6 +237,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <>
               <Crosshair className="w-4 h-4 text-cyan-400" />
               <span className="font-semibold text-slate-100 text-xs tracking-wide">Susceptibility Tool</span>
+            </>
+          )}
+          {activeTab === 'lcf' && (
+            <>
+              <Grid className="w-4 h-4 text-cyan-400" />
+              <span className="font-semibold text-slate-100 text-xs tracking-wide">LCF Conditioning Factors</span>
             </>
           )}
         </div>
@@ -1177,6 +1198,175 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 5: LCF MAPS */}
+        {activeTab === 'lcf' && (
+          <div className="space-y-5">
+            {/* Header intro */}
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Grid className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Thematic Rasters</span>
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">
+                  10 Factors
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Landslide Conditioning Factors (LCF) modeling terrain morphology, hydrology, lithology, and anthropogenic factors across Karnataka.
+              </p>
+            </div>
+
+            {/* Raster Map Selection Dropdown */}
+            <div className="space-y-2 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-300 block">
+                Select Conditioning Layer
+              </label>
+
+              <select
+                value={selectedLcfMapId}
+                onChange={(e) => onSelectLcfMap && onSelectLcfMap(e.target.value as LcfMapId)}
+                className="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-md p-2 text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+              >
+                {LCF_MAP_OPTIONS.map((opt, idx) => (
+                  <option key={opt.id} value={opt.id}>
+                    {idx + 1}. {opt.name} → {opt.filename}
+                  </option>
+                ))}
+              </select>
+
+              {/* Quick-select pills */}
+              <div className="pt-2 border-t border-slate-800/80">
+                <div className="text-[10px] text-slate-400 mb-1.5 font-medium">Quick Select Key Drivers:</div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { id: 'slope', label: 'Slope (SLOPE_web)' },
+                    { id: 'rainfall', label: 'Rainfall (rainfall_web)' },
+                    { id: 'ndvi', label: 'NDVI (NDVI_web)' },
+                    { id: 'dem', label: 'DEM (dem_web)' },
+                  ].map((btn) => (
+                    <button
+                      key={btn.id}
+                      onClick={() => onSelectLcfMap && onSelectLcfMap(btn.id as LcfMapId)}
+                      className={`px-2 py-1.5 rounded text-[11px] font-medium transition-all text-left truncate border ${
+                        selectedLcfMapId === btn.id
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
+                          : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
+                      }`}
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Opacity Control Slider */}
+            {(() => {
+              return (
+                <div className="space-y-3 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+                      Raster Overlay Opacity
+                    </span>
+                    <span className="font-mono text-cyan-400 text-xs font-bold tabular-nums">
+                      {Math.round(lcfOpacity * 100)}%
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={lcfOpacity}
+                    onChange={(e) => onChangeLcfOpacity && onChangeLcfOpacity(parseFloat(e.target.value))}
+                    className="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+                  />
+
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>0% (Transparent)</span>
+                    <span>50%</span>
+                    <span>100% (Solid)</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Active Raster Info & Color Legend */}
+            {(() => {
+              const currentLcf = LCF_MAP_OPTIONS.find((m) => m.id === selectedLcfMapId) || LCF_MAP_OPTIONS[4];
+              return (
+                <div className="space-y-3 bg-slate-950/60 p-3.5 rounded-lg border border-slate-800">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+                        Active Factor
+                      </div>
+                      <h4 className="text-sm font-semibold text-slate-100 mt-0.5">
+                        {currentLcf.name}
+                      </h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-900 border border-slate-700 text-cyan-300">
+                      {currentLcf.filename}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    {currentLcf.description}
+                  </p>
+
+                  {/* Gradient Legend Bar */}
+                  <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-medium text-slate-300">Value Legend & Range</span>
+                      <span className="font-mono text-[10px] text-slate-400">{currentLcf.unit}</span>
+                    </div>
+
+                    {/* Continuous Gradient Bar */}
+                    <div
+                      className="h-3 w-full rounded shadow-inner border border-slate-700/60"
+                      style={{
+                        background: `linear-gradient(to right, ${currentLcf.colors.join(', ')})`,
+                      }}
+                    />
+
+                    {/* Legend Ticks */}
+                    <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                      {currentLcf.labels.map((lbl, i) => (
+                        <span key={i}>{lbl}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Metadata pill */}
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                    <span>Coverage: Western Ghats</span>
+                    <span className="text-cyan-400">EPSG:32643 · 30m</span>
+                  </div>
+
+                  {isLoadingLcfRaster && (
+                    <div className="flex items-center gap-2 p-2 rounded bg-cyan-950/40 border border-cyan-800/60 text-cyan-300 text-[11px]">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Reading & Rendering {currentLcf.filename} (GeoTIFF)...</span>
+                    </div>
+                  )}
+
+                  {lcfError && (
+                    <div className="flex items-start gap-2 p-2.5 rounded bg-red-950/70 border border-red-500/50 text-red-200 text-[11px]">
+                      <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-semibold text-red-300">Raster Load Error</div>
+                        <div className="text-[10px] text-red-400 mt-0.5 leading-snug">{lcfError}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

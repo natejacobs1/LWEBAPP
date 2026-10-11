@@ -76,7 +76,7 @@ export interface LayerOpacity {
 
 export type BasemapId = 'osm' | 'carto_dark' | 'carto_light' | 'topo';
 
-export type GisTab = 'layers' | 'inspector' | 'analytics' | 'susceptibility';
+export type GisTab = 'layers' | 'inspector' | 'analytics' | 'susceptibility' | 'lcf';
 
 export interface BasemapOption {
   id: BasemapId;

@@ -4,18 +4,49 @@ import path from 'path';
 import fs from 'fs';
 import {defineConfig} from 'vite';
 
+const currentDir = import.meta.dirname || process.cwd();
+
 export default defineConfig(() => {
   return {
+    publicDir: 'public',
     plugins: [
       react(),
       tailwindcss(),
       {
         name: 'tiff-range-server',
+        buildStart() {
+          const publicFolder = path.resolve(currentDir, 'public');
+          if (!fs.existsSync(publicFolder)) {
+            fs.mkdirSync(publicFolder, { recursive: true });
+          }
+          try {
+            const rootFiles = fs.readdirSync(currentDir).filter((f) => f.endsWith('.tif'));
+            for (const f of rootFiles) {
+              const rootFile = path.resolve(currentDir, f);
+              const pubFile = path.resolve(publicFolder, f);
+              if (fs.existsSync(rootFile) && fs.statSync(rootFile).size > 1000) {
+                if (!fs.existsSync(pubFile) || fs.statSync(pubFile).size < 1000) {
+                  fs.copyFileSync(rootFile, pubFile);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Could not sync root tif to public:', e);
+          }
+        },
         configureServer(server) {
           server.middlewares.use((req, res, next) => {
-            if (req.url && req.url.split('?')[0] === '/lsm_map_web.tif') {
-              const filePath = path.resolve(__dirname, 'public/lsm_map_web.tif');
-              if (fs.existsSync(filePath)) {
+            const urlPath = req.url ? req.url.split('?')[0] : '';
+            if (urlPath.endsWith('.tif')) {
+              const filename = path.basename(urlPath);
+              const localPaths = [
+                path.resolve(currentDir, 'public', filename),
+                path.resolve(currentDir, filename),
+              ];
+              const filePath = localPaths.find((p) => fs.existsSync(p));
+
+              // If file exists locally and is not an LFS pointer (> 1000 bytes)
+              if (filePath && fs.statSync(filePath).size > 1000) {
                 const stat = fs.statSync(filePath);
                 const range = req.headers.range;
                 res.setHeader('Content-Type', 'image/tiff');
@@ -30,13 +61,56 @@ export default defineConfig(() => {
                     'Content-Range': `bytes ${start}-${end}/${stat.size}`,
                     'Content-Length': chunksize,
                   });
-                  fs.createReadStream(filePath, {start, end}).pipe(res);
+                  fs.createReadStream(filePath, { start, end }).pipe(res);
                 } else {
-                  res.writeHead(200, {'Content-Length': stat.size});
+                  res.writeHead(200, { 'Content-Length': stat.size });
                   fs.createReadStream(filePath).pipe(res);
                 }
                 return;
               }
+
+              // Otherwise proxy Range request to GitHub media storage
+              const targetUrl = `https://media.githubusercontent.com/media/natejacobs1/LWEBAPP/main/${filename}`;
+              const headers: Record<string, string> = {};
+              if (req.headers.range) {
+                headers['Range'] = req.headers.range as string;
+              }
+
+              fetch(targetUrl, { headers })
+                .then((remoteRes) => {
+                  res.statusCode = remoteRes.status;
+                  res.setHeader('Content-Type', remoteRes.headers.get('content-type') || 'image/tiff');
+                  res.setHeader('Accept-Ranges', 'bytes');
+                  res.setHeader('Access-Control-Allow-Origin', '*');
+                  if (remoteRes.headers.get('content-range')) {
+                    res.setHeader('Content-Range', remoteRes.headers.get('content-range')!);
+                  }
+                  if (remoteRes.headers.get('content-length')) {
+                    res.setHeader('Content-Length', remoteRes.headers.get('content-length')!);
+                  }
+                  if (remoteRes.body) {
+                    const reader = remoteRes.body.getReader();
+                    const streamPump = (): void => {
+                      reader.read().then(({ done, value }) => {
+                        if (done) {
+                          res.end();
+                          return;
+                        }
+                        res.write(value);
+                        streamPump();
+                      }).catch((err) => {
+                        res.destroy(err);
+                      });
+                    };
+                    streamPump();
+                  } else {
+                    res.end();
+                  }
+                })
+                .catch(() => {
+                  next();
+                });
+              return;
             }
             next();
           });
@@ -45,7 +119,7 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(currentDir, '.'),
       },
     },
     server: {

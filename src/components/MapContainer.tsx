@@ -150,6 +150,13 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
     } else {
       container.style.cursor = '';
     }
+
+    if (activeTab !== 'lcf') {
+      const timer = setTimeout(() => {
+        map.invalidateSize();
+      }, 60);
+      return () => clearTimeout(timer);
+    }
   }, [activeTab]);
 
   // 2. Manage Basemap TileLayer

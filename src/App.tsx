@@ -28,6 +28,7 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MapContainer } from './components/MapContainer';
 import { Legend } from './components/Legend';
+import { LcfMapsView } from './components/LcfMapsView';
 
 export default function App() {
   // GeoJSON Data State
@@ -318,70 +319,80 @@ export default function App() {
           </div>
         )}
 
-        {/* Left Interactive Control & Analysis Sidebar */}
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          isOpen={true}
-          layerVisibility={layerVisibility}
-          onToggleLayer={handleToggleLayer}
-          layerOpacity={layerOpacity}
-          onChangeOpacity={handleChangeOpacity}
-          selectedRiskFilters={selectedRiskFilters}
-          onToggleRiskFilter={handleToggleRiskFilter}
-          selectedDistrict={selectedDistrict}
-          onChangeDistrict={setSelectedDistrict}
-          availableDistricts={availableDistricts}
-          minSusceptibility={minSusceptibility}
-          onChangeMinSusceptibility={setMinSusceptibility}
-          maxDistanceToRoad={maxDistanceToRoad}
-          onChangeMaxDistanceToRoad={setMaxDistanceToRoad}
-          markerRadius={markerRadius}
-          onChangeMarkerRadius={setMarkerRadius}
-          selectedPoint={selectedPoint}
-          onSelectPoint={handleSelectPoint}
-          onZoomToPoint={handleZoomToPoint}
-          allLandslideFeatures={landslidesData?.features || []}
-          filteredLandslideFeatures={filteredLandslideFeatures}
-          districtsCount={districtsData?.features.length || 0}
-          roadsCount={roadsData?.features.length || 0}
-          susceptibilitySample={susceptibilitySample}
-          isSamplingRaster={isSamplingRaster}
-        />
-
-        {/* Map Container Viewport */}
-        <div className="relative flex-1 h-full w-full overflow-hidden">
-          <MapContainer
-            districtsData={districtsData}
-            roadsData={roadsData}
-            allLandslides={landslidesData?.features || []}
-            filteredLandslides={filteredLandslideFeatures}
-            selectedBasemap={selectedBasemap}
+        {/* 1. GIS Map Workspace (Preserved in DOM so Leaflet state and layers are maintained) */}
+        <div className={`relative flex flex-1 h-full w-full overflow-hidden ${activeTab === 'lcf' ? 'hidden' : ''}`}>
+          {/* Left Interactive Control & Analysis Sidebar */}
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            isOpen={true}
             layerVisibility={layerVisibility}
+            onToggleLayer={handleToggleLayer}
             layerOpacity={layerOpacity}
+            onChangeOpacity={handleChangeOpacity}
+            selectedRiskFilters={selectedRiskFilters}
+            onToggleRiskFilter={handleToggleRiskFilter}
+            selectedDistrict={selectedDistrict}
+            onChangeDistrict={setSelectedDistrict}
+            availableDistricts={availableDistricts}
+            minSusceptibility={minSusceptibility}
+            onChangeMinSusceptibility={setMinSusceptibility}
+            maxDistanceToRoad={maxDistanceToRoad}
+            onChangeMaxDistanceToRoad={setMaxDistanceToRoad}
             markerRadius={markerRadius}
+            onChangeMarkerRadius={setMarkerRadius}
             selectedPoint={selectedPoint}
             onSelectPoint={handleSelectPoint}
-            resetViewTrigger={resetViewTrigger}
-            zoomTarget={zoomTarget}
-            selectedDistrict={selectedDistrict}
-            onMapRasterQuery={handleMapRasterQuery}
+            onZoomToPoint={handleZoomToPoint}
+            allLandslideFeatures={landslidesData?.features || []}
+            filteredLandslideFeatures={filteredLandslideFeatures}
+            districtsCount={districtsData?.features.length || 0}
+            roadsCount={roadsData?.features.length || 0}
             susceptibilitySample={susceptibilitySample}
-            activeTab={activeTab}
+            isSamplingRaster={isSamplingRaster}
           />
 
-          {/* Floating Collapsible GIS Legend */}
-          {!isLoading && (
-            <Legend
-              counts={riskCounts}
-              totalPoints={landslidesData?.features.length || 0}
-              roadsCount={roadsData?.features.length || 0}
-              districtsCount={districtsData?.features.length || 0}
-              selectedRiskFilters={selectedRiskFilters}
-              onToggleRiskFilter={handleToggleRiskFilter}
+          {/* Map Container Viewport */}
+          <div className="relative flex-1 h-full w-full overflow-hidden">
+            <MapContainer
+              districtsData={districtsData}
+              roadsData={roadsData}
+              allLandslides={landslidesData?.features || []}
+              filteredLandslides={filteredLandslideFeatures}
+              selectedBasemap={selectedBasemap}
+              layerVisibility={layerVisibility}
+              layerOpacity={layerOpacity}
+              markerRadius={markerRadius}
+              selectedPoint={selectedPoint}
+              onSelectPoint={handleSelectPoint}
+              resetViewTrigger={resetViewTrigger}
+              zoomTarget={zoomTarget}
+              selectedDistrict={selectedDistrict}
+              onMapRasterQuery={handleMapRasterQuery}
+              susceptibilitySample={susceptibilitySample}
+              activeTab={activeTab}
             />
-          )}
+
+            {/* Floating Collapsible GIS Legend */}
+            {!isLoading && (
+              <Legend
+                counts={riskCounts}
+                totalPoints={landslidesData?.features.length || 0}
+                roadsCount={roadsData?.features.length || 0}
+                districtsCount={districtsData?.features.length || 0}
+                selectedRiskFilters={selectedRiskFilters}
+                onToggleRiskFilter={handleToggleRiskFilter}
+              />
+            )}
+          </div>
         </div>
+
+        {/* 2. LCF Maps Workspace */}
+        {activeTab === 'lcf' && (
+          <div className="relative flex flex-1 h-full w-full overflow-hidden">
+            <LcfMapsView />
+          </div>
+        )}
       </div>
     </div>
   );
