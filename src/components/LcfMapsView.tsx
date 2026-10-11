@@ -19,7 +19,6 @@ import {
   AlertCircle,
   Maximize2,
   Minimize2,
-  Info,
 } from 'lucide-react';
 
 export interface LcfFactorItem {
@@ -41,9 +40,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'aspect.png',
     src: '/aspect.png',
     category: 'Topographic',
-    description: 'Compass direction and azimuth exposure that terrain slopes face across the Western Ghats basin.',
+    description: 'Compass direction and azimuth exposure that terrain slopes face.',
     unitOrScale: 'Azimuth (0° – 360°)',
-    significance: 'Governs solar insolation, evapotranspiration rates, micro-climates, and monsoon windward moisture retention.',
+    significance: 'Governs solar exposure, evapotranspiration rates, and monsoon moisture retention.',
     icon: Compass,
   },
   {
@@ -52,9 +51,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'TWI.png',
     src: '/TWI.png',
     category: 'Hydrological',
-    description: 'Topographic Wetness Index quantifying topographical control on hydrological accumulation and pore saturation.',
+    description: 'Topographic Wetness Index quantifying topographic control on saturation.',
     unitOrScale: 'ln(a / tan β)',
-    significance: 'Identifies concave depressions and slope toes prone to saturated soil conditions and elevated pore water pressure.',
+    significance: 'Identifies concave depressions and slope toes prone to saturated soil and high pore water pressure.',
     icon: Droplets,
   },
   {
@@ -63,9 +62,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'slope.png',
     src: '/slope.png',
     category: 'Topographic',
-    description: 'Terrain inclination gradient measuring the maximum rate of elevation change.',
+    description: 'Terrain steepness gradient measuring the maximum rate of elevation change.',
     unitOrScale: 'Degrees (0° – 90°)',
-    significance: 'Primary direct driver of shear stress acting along failure planes; steeper gradients dramatically accelerate landslide initiation.',
+    significance: 'Primary direct driver of gravitational shear stress acting along failure planes.',
     icon: Mountain,
   },
   {
@@ -74,9 +73,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'rainfall.png',
     src: '/rainfall.png',
     category: 'Hydrological',
-    description: 'Spatial distribution of cumulative southwest monsoon precipitation across Karnataka ghat escarpments.',
+    description: 'Spatial distribution of cumulative monsoon precipitation.',
     unitOrScale: 'Millimeters (mm / yr)',
-    significance: 'Primary trigger for debris flows and slope failures through saturation and loss of soil shear strength.',
+    significance: 'Primary trigger for debris flows and slope failures through soil saturation.',
     icon: CloudRain,
   },
   {
@@ -87,7 +86,7 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     category: 'Topographic',
     description: 'Vertical surface curvature along the line of maximum slope inclination.',
     unitOrScale: 'Curvature Units (1/m)',
-    significance: 'Controls the acceleration or deceleration of surface runoff and gravitational mass movement along slopes.',
+    significance: 'Controls the acceleration or deceleration of surface runoff and mass movement.',
     icon: Activity,
   },
   {
@@ -96,9 +95,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'NDVI.png',
     src: '/NDVI.png',
     category: 'Environmental',
-    description: 'Normalized Difference Vegetation Index representing vegetation health, canopy density, and surface cover.',
+    description: 'Normalized Difference Vegetation Index representing canopy density.',
     unitOrScale: 'Index (-1.0 to +1.0)',
-    significance: 'Denser vegetation provides mechanical root cohesion and reinforces soil mantle against shallow translational slides.',
+    significance: 'Denser vegetation provides mechanical root cohesion and reinforces soil mantle.',
     icon: Trees,
   },
   {
@@ -107,9 +106,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'ldensity.png',
     src: '/ldensity.png',
     category: 'Environmental',
-    description: 'Spatial concentration and point cluster density of historical slope failure occurrences.',
+    description: 'Spatial concentration of historical slope failure occurrences.',
     unitOrScale: 'Density (events / km²)',
-    significance: 'Historical landslide clusters directly correlate with recurring high-susceptibility geological zones.',
+    significance: 'Historical landslide clusters directly correlate with recurring high-hazard zones.',
     icon: AlertTriangle,
   },
   {
@@ -118,9 +117,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'geomorphology.png',
     src: '/geomorphology.png',
     category: 'Topographic',
-    description: 'Classification of structural landforms, denudational hills, pediplains, and dissected plateaus.',
+    description: 'Classification of structural landforms and denudational units.',
     unitOrScale: 'Geomorphic Units',
-    significance: 'Structural weaknesses, fault scarps, and valley fills delineate localized geomechanical vulnerability.',
+    significance: 'Structural weaknesses, fault scarps, and valley fills delineate localized vulnerability.',
     icon: Layers,
   },
   {
@@ -129,9 +128,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'dtr.png',
     src: '/dtr.png',
     category: 'Anthropogenic',
-    description: 'Euclidean distance buffer zones radiating from highway corridors and paved road cuts.',
+    description: 'Euclidean distance buffer zones radiating from highway corridors.',
     unitOrScale: 'Meters (m)',
-    significance: 'Anthropogenic slope toes cut for road infrastructure destabilize natural talus angles and increase failure risk.',
+    significance: 'Slope toes cut for road infrastructure destabilize natural talus angles.',
     icon: Milestone,
   },
   {
@@ -140,9 +139,9 @@ export const LCF_FACTORS: LcfFactorItem[] = [
     filename: 'dem.png',
     src: '/dem.png',
     category: 'Topographic',
-    description: 'Digital Elevation Model rendering continuous topographical elevation above mean sea level.',
+    description: 'Digital Elevation Model rendering continuous topographical elevation.',
     unitOrScale: 'Elevation (m AMSL)',
-    significance: 'Fundamental baseline elevation model from which morphological parameters (slope, aspect, curvature) derive.',
+    significance: 'Baseline elevation model from which morphological parameters derive.',
     icon: MapPin,
   },
 ];
@@ -157,7 +156,6 @@ export const LcfMapsView: React.FC = () => {
 
   const currentFactor = LCF_FACTORS.find((f) => f.id === selectedFactorId) || LCF_FACTORS[0];
 
-  // Reset zoom and image state when factor changes
   useEffect(() => {
     setIsLoadingImage(true);
     setImageError(false);
@@ -209,30 +207,23 @@ export const LcfMapsView: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col lg:flex-row flex-1 h-full w-full overflow-hidden bg-slate-950 text-slate-100 font-sans"
+      className="flex flex-col lg:flex-row flex-1 h-full w-full overflow-hidden bg-[#0f1814] text-[#F3F4EF] font-sans"
     >
-      {/* 1. LEFT SIDE: Vertical List of 10 Selectable LCF Factors */}
-      <aside className="w-full lg:w-80 xl:w-96 shrink-0 bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col h-72 lg:h-full overflow-hidden select-none">
+      {/* 1. Left Factor Selector Panel */}
+      <aside className="w-full lg:w-72 xl:w-80 shrink-0 bg-[#17251F] border-b lg:border-b-0 lg:border-r border-[#A9B4AB]/25 flex flex-col h-64 lg:h-full overflow-hidden select-none">
         {/* Panel Header */}
-        <div className="p-3.5 border-b border-slate-800 bg-slate-950/70 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-cyan-400" />
-              <h2 className="text-xs font-semibold tracking-wide text-white uppercase">
-                LCF Conditioning Factors
-              </h2>
-            </div>
-            <span className="text-[11px] font-mono text-cyan-400 font-medium">
-              10 Layers
-            </span>
+        <div className="h-9 px-3.5 border-b border-[#A9B4AB]/20 bg-[#101a15]/80 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-1.5 font-mono text-xs font-semibold uppercase tracking-wider text-[#D5DFD4]">
+            <Layers className="w-3.5 h-3.5 text-[#A9B4AB]" />
+            <span>Conditioning Factors</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-            Select any factor to display the high-resolution geospatial raster map.
-          </p>
+          <span className="font-mono text-[11px] text-[#A9B4AB]">
+            10 rasters
+          </span>
         </div>
 
-        {/* Scrollable Factor List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1.5 focus:outline-none">
+        {/* List */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {LCF_FACTORS.map((factor, index) => {
             const Icon = factor.icon;
             const isSelected = factor.id === selectedFactorId;
@@ -241,47 +232,28 @@ export const LcfMapsView: React.FC = () => {
               <button
                 key={factor.id}
                 onClick={() => setSelectedFactorId(factor.id)}
-                className={`w-full text-left p-2.5 rounded-lg border transition-all flex items-start gap-3 group relative ${
+                className={`w-full text-left px-2.5 py-2 rounded border transition-colors flex items-center gap-2.5 ${
                   isSelected
-                    ? 'bg-slate-800 border-cyan-500/60 shadow-md shadow-cyan-950/30'
-                    : 'bg-slate-900/60 hover:bg-slate-800/60 border-slate-800/80 hover:border-slate-700'
+                    ? 'bg-[#26362E] border-[#A9B4AB]/35 text-[#F3F4EF]'
+                    : 'bg-transparent border-transparent text-[#A9B4AB] hover:text-[#F3F4EF] hover:bg-[#26362E]/50'
                 }`}
               >
-                {/* Active indicator bar */}
-                {isSelected && (
-                  <span className="absolute left-0 top-2 bottom-2 w-1 bg-cyan-400 rounded-r" />
-                )}
-
-                {/* Factor Icon */}
                 <div
-                  className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                    isSelected
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-                      : 'bg-slate-800 text-slate-400 group-hover:text-slate-200 group-hover:bg-slate-700/60'
+                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-[#34473d] text-[#D5DFD4]' : 'text-[#A9B4AB]'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-3.5 h-3.5" />
                 </div>
 
-                {/* Factor Details */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <span
-                      className={`text-xs font-semibold truncate ${
-                        isSelected ? 'text-white' : 'text-slate-200 group-hover:text-white'
-                      }`}
-                    >
+                    <span className="text-[13px] font-medium truncate text-[#F3F4EF]">
                       {index + 1}. {factor.name}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                    <span className="font-mono text-[11px] text-[#A9B4AB] truncate">
                       {factor.filename}
                     </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                    <span className="text-slate-400">{factor.category}</span>
-                    <span className="text-slate-600">·</span>
-                    <span className="text-slate-500 truncate">{factor.unitOrScale}</span>
                   </div>
                 </div>
               </button>
@@ -289,97 +261,90 @@ export const LcfMapsView: React.FC = () => {
           })}
         </div>
 
-        {/* Panel Footer Info */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60 text-[11px] text-slate-400 flex items-center gap-2 shrink-0">
-          <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-          <span className="truncate">Raw PNG rasters rendered at 1:1 geospatial fidelity</span>
+        {/* Panel Footer */}
+        <div className="h-8 px-3 border-t border-[#A9B4AB]/20 bg-[#101a15]/60 font-mono text-[11px] text-[#A9B4AB] flex items-center justify-between shrink-0">
+          <span>Format: 8-bit PNG</span>
+          <span>Coverage: Western Ghats</span>
         </div>
       </aside>
 
-      {/* 2. RIGHT SIDE: Large Viewer Panel Displaying Selected PNG */}
-      <main className="flex-1 h-full flex flex-col overflow-hidden bg-slate-950 relative min-w-0">
-        {/* Top Control Bar: Displays Selected Factor's Name & Tools */}
-        <div className="h-14 px-4 border-b border-slate-800 bg-slate-900/90 backdrop-blur flex items-center justify-between shrink-0 z-10 gap-3">
-          {/* Factor Title Header */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center shrink-0">
-              <currentFactor.icon className="w-4 h-4 text-cyan-400" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-white tracking-tight truncate">
-                  {currentFactor.name}
-                </h2>
-                <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40 shrink-0">
-                  {currentFactor.filename}
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-400 flex items-center gap-2 truncate">
-                <span>{currentFactor.category} Factor</span>
-                <span className="text-slate-600">·</span>
-                <span className="truncate">{currentFactor.description}</span>
-              </div>
-            </div>
+      {/* 2. Right Raster Viewer Panel */}
+      <main className="flex-1 h-full flex flex-col overflow-hidden bg-[#0f1814] relative min-w-0">
+        {/* Top Control Bar */}
+        <div className="h-10 px-3.5 border-b border-[#A9B4AB]/25 bg-[#17251F] flex items-center justify-between shrink-0 z-10 gap-3">
+          {/* Factor Metadata */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[13px] font-semibold text-[#F3F4EF] truncate">
+              {currentFactor.name}
+            </span>
+            <span className="text-[#A9B4AB]/40">·</span>
+            <span className="font-mono text-xs text-[#A9B4AB] truncate">
+              {currentFactor.filename}
+            </span>
+            <span className="text-[#A9B4AB]/40 hidden sm:inline">·</span>
+            <span className="text-xs text-[#D5DFD4] hidden sm:inline truncate">
+              {currentFactor.category}
+            </span>
           </div>
 
-          {/* Interactive Tools */}
+          {/* Tools */}
           <div className="flex items-center gap-1.5 shrink-0">
             {/* Zoom Controls */}
-            <div className="hidden sm:flex items-center gap-1 bg-slate-950/80 p-0.5 rounded-md border border-slate-800">
+            <div className="flex items-center gap-0.5 bg-[#101a15] p-0.5 rounded border border-[#A9B4AB]/25">
               <button
                 onClick={handleZoomOut}
                 disabled={zoomLevel <= 0.5}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                className="p-1 text-[#A9B4AB] hover:text-[#F3F4EF] disabled:opacity-30 transition-colors"
                 title="Zoom Out"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="text-[10px] font-mono font-medium text-slate-300 px-1.5 tabular-nums min-w-[2.75rem] text-center">
+              <span className="text-[11px] font-mono text-[#D5DFD4] px-1 tabular-nums">
                 {Math.round(zoomLevel * 100)}%
               </span>
               <button
                 onClick={handleZoomIn}
                 disabled={zoomLevel >= 3}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                className="p-1 text-[#A9B4AB] hover:text-[#F3F4EF] disabled:opacity-30 transition-colors"
                 title="Zoom In"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleResetZoom}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
-                title="Reset Zoom to 100%"
+                className="p-1 text-[#A9B4AB] hover:text-[#F3F4EF] transition-colors"
+                title="Reset Zoom"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3" />
               </button>
             </div>
 
-            {/* Open in new tab */}
+            {/* External link */}
             <a
               href={currentFactor.src}
               target="_blank"
               rel="noreferrer"
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md border border-slate-800 bg-slate-950/50 transition-colors"
+              className="p-1.5 text-[#F3F4EF] bg-[#26362E] hover:bg-[#34473d] rounded border border-[#A9B4AB]/30 transition-colors"
               title="Open full image in new tab"
             >
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
 
-            {/* Download Image */}
+            {/* Download */}
             <a
               href={currentFactor.src}
               download={currentFactor.filename}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md border border-slate-800 bg-slate-950/50 transition-colors"
+              className="p-1.5 text-[#F3F4EF] bg-[#26362E] hover:bg-[#34473d] rounded border border-[#A9B4AB]/30 transition-colors"
               title={`Download ${currentFactor.filename}`}
             >
               <Download className="w-3.5 h-3.5" />
             </a>
 
-            {/* Fullscreen button */}
+            {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md border border-slate-800 bg-slate-950/50 transition-colors"
-              title={isFullscreen ? 'Exit Fullscreen' : 'View Fullscreen'}
+              className="p-1.5 text-[#F3F4EF] bg-[#26362E] hover:bg-[#34473d] rounded border border-[#A9B4AB]/30 transition-colors"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             >
               {isFullscreen ? (
                 <Minimize2 className="w-3.5 h-3.5" />
@@ -390,69 +355,39 @@ export const LcfMapsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Center Image Canvas Area */}
-        <div className="flex-1 relative flex items-center justify-center p-3 sm:p-6 lg:p-8 overflow-auto min-h-0 bg-slate-950/90">
-          {/* Subtle grid background to highlight transparent edges */}
-          <div
-            className="absolute inset-0 opacity-20 pointer-events-none"
-            style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, #334155 1px, transparent 0)`,
-              backgroundSize: '24px 24px',
-            }}
-          />
-
-          {/* Loading Indicator */}
+        {/* Centered Image Canvas */}
+        <div className="flex-1 relative flex items-center justify-center p-3 sm:p-5 overflow-auto min-h-0 bg-[#0f1814]">
           {isLoadingImage && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/60 backdrop-blur-xs">
-              <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-lg mb-3">
-                <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
-              </div>
-              <p className="text-xs font-medium text-slate-200">
-                Rendering {currentFactor.name} Raster Map...
-              </p>
-              <p className="text-[11px] font-mono text-cyan-400 mt-1">
-                {currentFactor.filename}
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#0f1814]/75">
+              <Loader2 className="w-5 h-5 text-[#D5DFD4] animate-spin mb-2" />
+              <p className="text-xs text-[#A9B4AB] font-mono">
+                Loading {currentFactor.filename}...
               </p>
             </div>
           )}
 
-          {/* Error Message if image fails to load */}
           {imageError ? (
-            <div className="relative z-20 max-w-md bg-slate-900 border border-rose-500/40 rounded-xl p-6 text-center shadow-2xl">
-              <div className="w-12 h-12 rounded-xl bg-rose-950/50 border border-rose-500/30 flex items-center justify-center mx-auto mb-3">
-                <AlertCircle className="w-6 h-6 text-rose-400" />
+            <div className="relative z-20 max-w-sm bg-[#17251F] border border-[#A9B4AB]/30 rounded p-4 text-center">
+              <AlertCircle className="w-5 h-5 text-rose-400 mx-auto mb-2" />
+              <div className="text-xs font-semibold text-rose-200">
+                Failed to Load Map Image
               </div>
-              <h3 className="text-sm font-semibold text-rose-200">
-                Failed to Load LCF Map Image
-              </h3>
-              <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-                Could not load raster asset <code className="font-mono text-rose-300 bg-rose-950/80 px-1 py-0.5 rounded">{currentFactor.filename}</code> from <code className="font-mono text-slate-400">{currentFactor.src}</code>.
+              <p className="text-[11px] text-[#A9B4AB] mt-1 font-mono">
+                {currentFactor.filename}
               </p>
-              <div className="mt-4 flex items-center justify-center gap-2">
-                <button
-                  onClick={() => {
-                    setImageError(false);
-                    setIsLoadingImage(true);
-                  }}
-                  className="px-3.5 py-1.5 bg-rose-900 hover:bg-rose-800 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Retry Loading</span>
-                </button>
-                <a
-                  href={currentFactor.src}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors"
-                >
-                  Open Directly
-                </a>
-              </div>
+              <button
+                onClick={() => {
+                  setImageError(false);
+                  setIsLoadingImage(true);
+                }}
+                className="mt-3 px-2.5 py-1 bg-[#26362E] hover:bg-[#34473d] text-[#F3F4EF] border border-[#A9B4AB]/30 rounded text-xs font-mono transition-colors"
+              >
+                Retry
+              </button>
             </div>
           ) : (
-            /* Centered Image with preserved aspect ratio, no stretching, no cropping */
             <div
-              className="relative max-h-full max-w-full flex items-center justify-center transition-transform duration-150 ease-out"
+              className="relative max-h-full max-w-full flex items-center justify-center transition-transform duration-100 ease-out"
               style={{
                 transform: `scale(${zoomLevel})`,
                 transformOrigin: 'center center',
@@ -461,8 +396,8 @@ export const LcfMapsView: React.FC = () => {
               <img
                 key={currentFactor.id}
                 src={currentFactor.src}
-                alt={`${currentFactor.name} - Landslide Conditioning Factor Map (${currentFactor.filename})`}
-                className={`max-h-[calc(100vh-12rem)] max-w-full object-contain rounded-lg shadow-2xl border border-slate-800/90 transition-opacity duration-200 ${
+                alt={`${currentFactor.name} (${currentFactor.filename})`}
+                className={`max-h-[calc(100vh-8.5rem)] max-w-full object-contain rounded border border-[#A9B4AB]/20 transition-opacity duration-150 ${
                   isLoadingImage ? 'opacity-0' : 'opacity-100'
                 }`}
                 onLoad={() => {
@@ -479,16 +414,14 @@ export const LcfMapsView: React.FC = () => {
         </div>
 
         {/* Bottom Technical Context Footer */}
-        <div className="h-10 px-4 border-t border-slate-800 bg-slate-900/80 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
-          <div className="flex items-center gap-2 truncate">
-            <span className="font-semibold text-slate-300">Geotechnical Significance:</span>
-            <span className="truncate text-slate-400">{currentFactor.significance}</span>
+        <div className="h-7 px-3.5 border-t border-[#A9B4AB]/25 bg-[#17251F] flex items-center justify-between text-[11px] text-[#A9B4AB] font-mono shrink-0">
+          <div className="truncate">
+            <span className="text-[#D5DFD4]">Impact: </span>
+            <span>{currentFactor.significance}</span>
           </div>
-          <div className="hidden md:flex items-center gap-3 shrink-0 font-mono text-[10px] text-slate-500">
-            <span>Western Ghats Basin</span>
-            <span>·</span>
-            <span>Cartographic PNG Output</span>
-          </div>
+          <span className="shrink-0 hidden md:inline text-[#A9B4AB]">
+            Unit: {currentFactor.unitOrScale}
+          </span>
         </div>
       </main>
     </div>

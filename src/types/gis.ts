@@ -85,3 +85,24 @@ export interface BasemapOption {
   attribution: string;
   maxZoom: number;
 }
+
+export interface LcfMapOption {
+  id: string;
+  name: string;
+  filename: string;
+  unit: string;
+  description: string;
+  min: number;
+  max: number;
+  colors: string[];
+  labels: string[];
+}
+
+export interface LcfRenderResult {
+  dataUrl: string;
+  bounds: [[number, number], [number, number]];
+  width: number;
+  height: number;
+  crs: string;
+}
+

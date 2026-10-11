@@ -267,7 +267,7 @@ export default function App() {
   );
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0f1814] text-[#F3F4EF] font-sans">
       {/* GIS Header Console */}
       <Header
         pointsCount={landslidesData?.features.length || 0}
@@ -282,38 +282,38 @@ export default function App() {
       />
 
       {/* Main GIS Workspace */}
-      <div className="relative flex flex-1 h-[calc(100vh-3.5rem)] w-full overflow-hidden">
+      <div className="relative flex flex-1 h-[calc(100vh-2.75rem)] w-full overflow-hidden">
         {/* Loading Overlay */}
         {isLoading && (
-          <div className="absolute inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-2xl mb-4">
-              <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+          <div className="absolute inset-0 z-50 bg-[#0f1814]/85 flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-10 h-10 rounded bg-[#17251F] border border-[#A9B4AB]/30 flex items-center justify-center mb-3">
+              <Loader2 className="w-5 h-5 text-[#D5DFD4] animate-spin" />
             </div>
-            <h2 className="text-base font-semibold text-white tracking-tight">
-              Loading GeoJSON Spatial Datasets
+            <h2 className="text-sm font-semibold text-[#F3F4EF]">
+              Loading Geospatial Datasets
             </h2>
-            <p className="text-xs font-mono text-cyan-400 mt-2 max-w-md">
+            <p className="text-xs font-mono text-[#A9B4AB] mt-1.5 max-w-md">
               {loadingStep}
             </p>
-            <div className="text-[11px] text-slate-500 mt-3 font-mono">
-              EPSG:4326 WGS 84 · OpenStreetMap Engine
+            <div className="text-[11px] text-[#A9B4AB]/80 mt-2 font-mono">
+              EPSG:4326 WGS 84
             </div>
           </div>
         )}
 
         {/* Error Banner */}
         {error && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 max-w-lg bg-red-950/95 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg shadow-2xl flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 max-w-md bg-[#17251F] border border-rose-500/50 text-[#F3F4EF] px-3.5 py-3 rounded shadow-lg flex items-start gap-3">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
             <div className="flex-1 text-xs">
-              <p className="font-semibold text-red-100">Dataset Loading Error</p>
-              <p className="mt-0.5 text-red-300">{error}</p>
+              <p className="font-semibold text-rose-200 text-sm">Dataset Loading Error</p>
+              <p className="mt-1 text-[#A9B4AB] text-xs">{error}</p>
             </div>
             <button
               onClick={fetchData}
-              className="px-2.5 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs font-medium flex items-center gap-1 transition-colors"
+              className="px-2.5 py-1 bg-[#26362E] hover:bg-[#34473d] text-[#F3F4EF] border border-[#A9B4AB]/30 rounded text-xs font-medium flex items-center gap-1.5 transition-colors"
             >
-              <RefreshCw className="w-3 h-3" />
+              <RefreshCw className="w-3.5 h-3.5" />
               <span>Retry</span>
             </button>
           </div>

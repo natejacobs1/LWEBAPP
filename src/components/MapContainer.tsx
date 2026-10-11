@@ -205,8 +205,8 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
         // Hover tooltip
         layerItem.bindTooltip(
           `<div class="font-sans">
-            <strong class="text-cyan-400 font-semibold">${distName} District</strong>
-            <div class="text-[10px] text-slate-300 font-mono">${stateName}</div>
+            <strong class="text-[#D5DFD4] font-semibold text-xs">${distName} District</strong>
+            <div class="text-[11px] text-[#A9B4AB] font-mono">${stateName}</div>
           </div>`,
           { sticky: true, className: 'leaflet-tooltip' }
         );
@@ -278,8 +278,8 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
 
     const layer = L.geoJSON(roadsData as unknown as GeoJSON.GeoJsonObject, {
       style: () => ({
-        color: '#facc15',
-        weight: 4.5,
+        color: '#eab308',
+        weight: 2.2,
         opacity: layerOpacity.roads,
         lineCap: 'round',
         lineJoin: 'round',
@@ -305,10 +305,10 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
         });
 
         layerItem.bindPopup(
-          `<div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 10px; min-width: 220px; background: #0f172a; color: #f8fafc; border-radius: 6px;">
-            <div style="font-size: 10px; text-transform: uppercase; color: #facc15; font-weight: 700; letter-spacing: 0.05em;">Transportation Corridor</div>
-            <div style="font-size: 14px; font-weight: 700; color: #ffffff; margin-top: 2px;">${name} ${ref}</div>
-            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-top: 1px solid #334155; padding-top: 6px;">
+          `<div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 10px; min-width: 220px; background: #17251F; color: #F3F4EF; border-radius: 6px; border: 1px solid rgba(169, 180, 171, 0.28);">
+            <div style="font-size: 11px; text-transform: uppercase; color: #facc15; font-weight: 700; letter-spacing: 0.05em;">Transportation Corridor</div>
+            <div style="font-size: 14px; font-weight: 700; color: #F3F4EF; margin-top: 2px;">${name} ${ref}</div>
+            <div style="font-size: 12px; color: #A9B4AB; margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-top: 1px solid rgba(169, 180, 171, 0.2); padding-top: 6px;">
               <span><strong>Type:</strong> ${highway}</span>
               ${p.lanes ? `<span><strong>Lanes:</strong> ${p.lanes}</span>` : ''}
               ${p.surface ? `<span><strong>Surface:</strong> ${p.surface}</span>` : ''}
@@ -319,8 +319,8 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
         );
 
         layerItem.bindTooltip(
-          `<div class="font-sans font-medium text-slate-100 flex items-center gap-1.5">
-            <span class="w-3 h-1 bg-yellow-400 rounded-sm inline-block shadow-[0_0_4px_#facc15]"></span>
+          `<div class="font-sans font-medium text-[#F3F4EF] flex items-center gap-1.5 text-xs">
+            <span class="w-3 h-1 bg-amber-400 rounded-xs inline-block"></span>
             <span>${name} ${ref}</span>
           </div>`,
           { sticky: true }
@@ -543,18 +543,18 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
       rasterQueryMarkerRef.current = marker;
 
       const popupHtml = `
-        <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 10px; min-width: 230px; background: #0f172a; color: #f8fafc; border-radius: 8px;">
-          <div style="font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">LSM Raster Sample</div>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
-            <span style="font-size: 16px; font-weight: 700; color: ${color.fill}; font-family: 'JetBrains Mono', monospace;">
+        <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 11px; min-width: 230px; background: #17251F; color: #F3F4EF; border-radius: 6px; border: 1px solid rgba(169, 180, 171, 0.28);">
+          <div style="font-size: 11px; text-transform: uppercase; color: #A9B4AB; font-weight: 600; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace;">LSM Raster Sample</div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;">
+            <span style="font-size: 17px; font-weight: 700; color: ${color.fill}; font-family: 'JetBrains Mono', monospace;">
               ${susceptibilitySample.susceptibility.toFixed(2)}%
             </span>
-            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: ${color.stroke}33; border: 1px solid ${color.stroke}; color: ${color.fill};">
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #26362E; border: 1px solid rgba(169, 180, 171, 0.3); color: ${color.fill};">
               <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${color.fill};"></span>
               ${susceptibilitySample.riskClass} Risk
             </span>
           </div>
-          <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; padding-top: 6px; border-top: 1px solid #334155; font-family: 'JetBrains Mono', monospace; line-height: 1.5;">
+          <div style="font-size: 11px; color: #A9B4AB; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(169, 180, 171, 0.2); font-family: 'JetBrains Mono', monospace; line-height: 1.5;">
             <div>Lat: ${susceptibilitySample.latitude.toFixed(5)}° N</div>
             <div>Lng: ${susceptibilitySample.longitude.toFixed(5)}° E</div>
           </div>
@@ -566,9 +566,9 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
       L.popup({ maxWidth: 260, className: 'raster-query-popup', autoClose: true })
         .setLatLng([latitude, longitude])
         .setContent(`
-          <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 10px; background: #0f172a; color: #f8fafc; border-radius: 8px; border-left: 3px solid #ef4444;">
-            <div style="font-size: 12px; font-weight: 600; color: #fca5a5;">Please click inside the susceptibility map area.</div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
+          <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 11px; background: #17251F; color: #F3F4EF; border-radius: 6px; border-left: 3px solid #ef4444; border-top: 1px solid rgba(169, 180, 171, 0.25); border-right: 1px solid rgba(169, 180, 171, 0.25); border-bottom: 1px solid rgba(169, 180, 171, 0.25);">
+            <div style="font-size: 13px; font-weight: 600; color: #fca5a5;">Please click inside the susceptibility map area.</div>
+            <div style="font-size: 11px; color: #A9B4AB; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
               Location is outside lsm_map_web.tif coverage.
             </div>
           </div>
@@ -578,9 +578,9 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
       L.popup({ maxWidth: 260, className: 'raster-query-popup', autoClose: true })
         .setLatLng([latitude, longitude])
         .setContent(`
-          <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 10px; background: #0f172a; color: #f8fafc; border-radius: 8px; border-left: 3px solid #f59e0b;">
-            <div style="font-size: 12px; font-weight: 600; color: #fde68a;">No susceptibility data available at this location.</div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
+          <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding: 11px; background: #17251F; color: #F3F4EF; border-radius: 6px; border-left: 3px solid #f59e0b; border-top: 1px solid rgba(169, 180, 171, 0.25); border-right: 1px solid rgba(169, 180, 171, 0.25); border-bottom: 1px solid rgba(169, 180, 171, 0.25);">
+            <div style="font-size: 13px; font-weight: 600; color: #fde68a;">No susceptibility data available at this location.</div>
+            <div style="font-size: 11px; color: #A9B4AB; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
               ${latitude.toFixed(5)}° N, ${longitude.toFixed(5)}° E
             </div>
           </div>
@@ -590,25 +590,25 @@ export const MapContainer: React.FC<MapContainerProps> = React.memo(({
   }, [susceptibilitySample]);
 
   return (
-    <div className="relative flex-1 h-full w-full overflow-hidden bg-slate-950">
+    <div className="relative flex-1 h-full w-full overflow-hidden bg-[#0f1814]">
       {/* Leaflet Map DOM Element */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
       {/* Coordinate & Zoom Telemetry HUD */}
-      <div className="absolute bottom-5 left-16 z-[1000] hidden sm:flex items-center gap-3 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 px-3 py-1.5 rounded-md shadow-lg text-[11px] font-mono text-slate-300 pointer-events-none select-none">
+      <div className="absolute bottom-5 left-16 z-[1000] hidden sm:flex items-center gap-3 bg-[#17251F] border border-[#A9B4AB]/30 px-3 py-1.5 rounded shadow text-xs font-mono text-[#F3F4EF] pointer-events-none select-none">
         <div className="flex items-center gap-1.5">
-          <span className="text-slate-500">LAT</span>
-          <span className="text-slate-200 tabular-nums">{formatNum(mouseCoords.lat, 4)}° N</span>
+          <span className="text-[#A9B4AB]">LAT</span>
+          <span className="text-[#F3F4EF] tabular-nums">{formatNum(mouseCoords.lat, 4)}° N</span>
         </div>
-        <span className="text-slate-700">|</span>
+        <span className="text-[#A9B4AB]/40">|</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-slate-500">LNG</span>
-          <span className="text-slate-200 tabular-nums">{formatNum(mouseCoords.lng, 4)}° E</span>
+          <span className="text-[#A9B4AB]">LNG</span>
+          <span className="text-[#F3F4EF] tabular-nums">{formatNum(mouseCoords.lng, 4)}° E</span>
         </div>
-        <span className="text-slate-700">|</span>
+        <span className="text-[#A9B4AB]/40">|</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-slate-500">ZOOM</span>
-          <span className="text-cyan-400 tabular-nums">{mouseCoords.zoom}</span>
+          <span className="text-[#A9B4AB]">ZOOM</span>
+          <span className="text-[#D5DFD4] font-semibold tabular-nums">{mouseCoords.zoom}</span>
         </div>
       </div>
     </div>
