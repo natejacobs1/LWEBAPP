@@ -98,3 +98,4 @@ npm run build
 ## Dataset Attribution
 
 Geospatial data for districts, road networks, and landslide hazard points are curated for the Karnataka Western Ghats region, derived from geological survey records, satellite remote sensing, and field verification.
+Thank
